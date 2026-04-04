@@ -60,5 +60,6 @@ def test_create_user_and_verify_schema_resolution_sets_search_path():
         # E confirma que queries dos apps em public continuam resolvíveis.
         assert TenantUser.objects.filter(pk=user.pk).exists()
     finally:
+        connection.set_schema_to_public()
         post_save.connect(provision_tenant_schema, sender=Customer)
 

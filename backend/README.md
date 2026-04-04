@@ -38,6 +38,10 @@ uvicorn core.asgi:application --reload --port 8000
 ---
 ## SPA — RockItDown (entrypoint)
 
+Com **`DEBUG=True`**, o projecto define `SHOW_PUBLIC_IF_NO_TENANT_FOUND` e `PUBLIC_SCHEMA_URLCONF`, para que pedidos a **`http://localhost:8000`** (sem `Domain` para `localhost`) usem o schema **public** e `/app/` não falhe com 404 de tenant.
+
+Em produção (`DEBUG=False`), cada hostname de cliente deve existir em `tenants_domain` (ex.: `{schema}.rid.localhost`).
+
 O entrypoint do SPA é servido pelo Django em:
 - `GET /app/` → `apps.accounts.views.RockItDownSPA` (requer login via `LoginRequiredMixin`)
 

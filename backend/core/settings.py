@@ -68,6 +68,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "core.urls"
 
+# django-tenants: se o Host não tiver linha em tenants_domain (ex.: `localhost:8000`
+# em dev), em DEBUG servimos o URLconf público em vez de 404 "No tenant for hostname".
+# Em produção (DEBUG=False) cada hostname de cliente deve ter Domain registado.
+if DEBUG:
+    SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
+    PUBLIC_SCHEMA_URLCONF = ROOT_URLCONF
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",

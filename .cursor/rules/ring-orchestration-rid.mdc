@@ -1,0 +1,12 @@
+---
+description: Ring vendored no RID — skills, agentes e orquestração no workspace
+alwaysApply: true
+---
+
+# Ring no repositório RID
+
+- O framework **Ring** está em `ring/` (vendored). O bundle gerado para Cursor fica em `ring/.ring-build/cursor/`.
+- Neste workspace, **skills**, **agents** e **commands** do Ring estão em `.cursor/skills/`, `.cursor/agents/` e `.cursor/commands/` como **symlinks** para esse bundle (equipas: `default`, `dev-team`, `finops-team`, `pm-team`, `pmo-team`, `tw-team`).
+- **Exceção RID:** a skill real (não symlink) `.cursor/skills/backend-engineer-python/` cobre o agente `ring:backend-engineer-python` (Python/Django/FastAPI); definição completa em `ring/dev-team/agents/backend-engineer-python.md`.
+- Metodologia e fluxos humanos: `CONTRIBUTING.md`. Regras do produto: `docs/PROJECT_RULES.md` e `docs/adr/`.
+- Para tarefas de backend Python, preferir carregar a skill **backend-engineer-python** e alinhar saída ao schema do agente Ring (verificação de standards, validação pós-implementação com ruff/pytest).

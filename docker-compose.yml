@@ -17,6 +17,14 @@ volumes:
     driver: local
 
 # =============================================================================
+# Extensões Compose (âncoras reutilizáveis)
+# =============================================================================
+x-backend-build: &backend_build
+  context: ./backend
+  dockerfile: Dockerfile
+  target: production
+
+# =============================================================================
 # Serviços
 # =============================================================================
 services:
@@ -32,6 +40,8 @@ services:
       POSTGRES_USER: rid
       POSTGRES_PASSWORD: rid
       POSTGRES_DB: rid
+      # Palavra-passe do role PostgreSQL dedicado ao Langflow (schema langflow na mesma DB rid).
+      LANGFLOW_DB_PASSWORD: ${LANGFLOW_DB_PASSWORD:-langflow}
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
@@ -68,10 +78,7 @@ services:
   # Backend — Django 6 + FastAPI via Uvicorn ASGI
   # ---------------------------------------------------------------------------
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: production
+    build: *backend_build
     container_name: rid-backend
     restart: unless-stopped
     env_file:
@@ -89,6 +96,28 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Langflow — DDL idempotente (fonte única: Django manage.py)
+  # ---------------------------------------------------------------------------
+  langflow-pg-bootstrap:
+    profiles:
+      - langflow
+    build: *backend_build
+    container_name: rid-langflow-pg-bootstrap
+    restart: "no"
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      LANGFLOW_DB_PASSWORD: ${LANGFLOW_DB_PASSWORD:-langflow}
+    command: ["python", "manage.py", "ensure_langflow_schema"]
+    networks:
+      - rid-network
+    depends_on:
+      db:
         condition: service_healthy
 
   # ---------------------------------------------------------------------------
@@ -110,5 +139,13 @@ services:
     environment:
       LANGFLOW_SUPERUSER: admin
       LANGFLOW_SUPERUSER_PASSWORD: adminpassword
+      LANGFLOW_DB_PASSWORD: ${LANGFLOW_DB_PASSWORD:-langflow}
+      # Mesma database rid que o Django; tabelas Langflow ficam no schema langflow (search_path no role).
+      LANGFLOW_DATABASE_URL: postgresql://langflow:${LANGFLOW_DB_PASSWORD:-langflow}@db:5432/rid
     networks:
       - rid-network
+    depends_on:
+      db:
+        condition: service_healthy
+      langflow-pg-bootstrap:
+        condition: service_completed_successfully

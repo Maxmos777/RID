@@ -9,12 +9,19 @@ com password derivada (nunca mostrada a humanos). Esse utilizador possui um
 project nomeado `rid-<schema>` onde flows partilhados do tenant podem viver.
 
 O campo `Customer.langflow_workspace_id` guarda o UUID desse Folder (project).
+
+Fluxo validado contra Langflow 1.8.3:
+  1. POST /api/v1/users/          [x-api-key: SUPERUSER_API_KEY]  → cria user inactivo
+  2. PATCH /api/v1/users/{id}     [x-api-key: SUPERUSER_API_KEY]  → activa user
+  3. POST /api/v1/login           [form-data]                      → token serv user
+  4. POST /api/v1/projects/       [Bearer token]                   → project/workspace
+
+Se user já existe (400) → salta criação/activação, vai para login directamente.
 """
 from __future__ import annotations
 
 import hashlib
 import logging
-from typing import Any
 from uuid import UUID
 
 import httpx
@@ -47,22 +54,50 @@ async def provision_tenant_langflow_project(
     Garante utilizador de serviço Langflow + project (Folder) para o tenant.
 
     Returns (project_id_str, None) on success, ("", error_message) on failure.
+
+    Falha silenciosa: erros são retornados como mensagem, nunca levantam excepção.
+    O caller (services.py) decide se loga ou propaga.
     """
+    api_key: str | None = getattr(settings, "LANGFLOW_SUPERUSER_API_KEY", None)
+    if not api_key:
+        return "", "LANGFLOW_SUPERUSER_API_KEY not configured — workspace não provisionado"
+
     username = tenant_service_username(tenant_schema)
     password = _derive_tenant_service_password(tenant_schema)
     base = settings.LANGFLOW_BASE_URL.rstrip("/")
+    superuser_headers = {"x-api-key": api_key}
 
     async with httpx.AsyncClient(base_url=base, timeout=30) as client:
+        # ── 1. Criar utilizador de serviço (requer auth de superuser) ──────────
         create_resp = await client.post(
             "/api/v1/users/",
             json={"username": username, "password": password},
+            headers=superuser_headers,
         )
-        if create_resp.status_code not in (200, 201, 400):
+        user_already_exists = create_resp.status_code == 400
+        if not user_already_exists and create_resp.status_code not in (200, 201):
             return "", (
                 f"langflow create service user failed: {create_resp.status_code} — "
                 f"{create_resp.text}"
             )
 
+        # ── 2. Activar utilizador (Langflow cria com is_active=false por defeito) ─
+        if not user_already_exists:
+            user_id: str = create_resp.json().get("id", "")
+            if not user_id:
+                return "", "langflow create user returned no id"
+            patch_resp = await client.patch(
+                f"/api/v1/users/{user_id}",
+                json={"is_active": True},
+                headers=superuser_headers,
+            )
+            if patch_resp.status_code not in (200, 201):
+                return "", (
+                    f"langflow activate user failed: {patch_resp.status_code} — "
+                    f"{patch_resp.text}"
+                )
+
+        # ── 3. Login como utilizador de serviço ─────────────────────────────────
         login_resp = await client.post(
             "/api/v1/login",
             data={"username": username, "password": password},
@@ -72,20 +107,18 @@ async def provision_tenant_langflow_project(
                 f"langflow service user login failed: {login_resp.status_code} — "
                 f"{login_resp.text}"
             )
-
         token: str = login_resp.json().get("access_token", "")
         if not token:
             return "", "langflow login returned no access_token"
 
-        headers = {"Authorization": f"Bearer {token}"}
-        body: dict[str, Any] = {
-            "name": _project_name_for_schema(tenant_schema),
-            "description": tenant_name or tenant_schema,
-        }
+        # ── 4. Criar project (workspace isolado do tenant) ──────────────────────
         proj_resp = await client.post(
             "/api/v1/projects/",
-            json=body,
-            headers=headers,
+            json={
+                "name": _project_name_for_schema(tenant_schema),
+                "description": tenant_name or tenant_schema,
+            },
+            headers={"Authorization": f"Bearer {token}"},
         )
         if proj_resp.status_code not in (200, 201):
             return "", (
@@ -93,8 +126,7 @@ async def provision_tenant_langflow_project(
                 f"{proj_resp.text}"
             )
 
-        data = proj_resp.json()
-        raw_id = data.get("id")
+        raw_id = proj_resp.json().get("id")
         if raw_id is None:
             return "", "langflow create project returned no id"
 

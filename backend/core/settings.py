@@ -178,12 +178,15 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@localhost")
 # ---------------------------------------------------------------------------
 # Langflow
 # ---------------------------------------------------------------------------
-LANGFLOW_BASE_URL = os.getenv("LANGFLOW_BASE_URL", "http://localhost:7860")
+LANGFLOW_BASE_URL = os.getenv("LANGFLOW_BASE_URL", "http://localhost:7861")
 LANGFLOW_SUPERUSER = os.getenv("LANGFLOW_SUPERUSER") or "admin"
 LANGFLOW_SUPERUSER_PASSWORD = os.environ.get("LANGFLOW_SUPERUSER_PASSWORD")
 if not LANGFLOW_SUPERUSER_PASSWORD and not DEBUG:
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured("LANGFLOW_SUPERUSER_PASSWORD must be set in production")
+# API Key do superuser Langflow — gerada em Settings → API Keys.
+# Ausente → langflow_workspace_id fica null (graceful degradation; tenant cria-se na mesma).
+LANGFLOW_SUPERUSER_API_KEY: str | None = os.getenv("LANGFLOW_SUPERUSER_API_KEY") or None
 
 # ---------------------------------------------------------------------------
 # Stripe

@@ -1,7 +1,7 @@
 # Plano — Integração Django ↔ Langflow: Base de Dados e Multi-tenancy
 
 **Data:** 2026-04-04
-**Estado:** Proposed
+**Estado:** In Progress — Fase 1 ✅ concluída; Fase 2 em curso
 **Autores:** RID Platform Team
 **Contexto:** Brainstorm de arquitectura pós-ADR-008; resolve dual-database problem + bug crítico de perda de dados
 **ADR relacionado:** ADR-009 (a criar após aprovação deste plano)
@@ -43,7 +43,7 @@ DEPOIS: Uma database `rid` no rid-db: Django (public + schemas tenant) + Langflo
 
 Um único servidor PostgreSQL (`rid-db`) e **uma database** `rid`:
 - **Django** — role `rid`, schemas `public` + `tenant_*` (django-tenants)
-- **Langflow** — role `langflow`, `search_path = langflow, public`; Alembic cria tabelas no schema `langflow`
+- **Langflow** — role `langflow`, `search_path = langflow` (exclusivo, sem public); Alembic cria tabelas no schema `langflow`
 
 O Django ORM não referencia o schema `langflow`. O Langflow não usa o ORM Django. Isolamento por **role + search_path**, sem segunda database.
 
@@ -51,10 +51,11 @@ Para visibilidade de dados Langflow no Django (billing, audit, reporting — M3+
 
 ---
 
-## Fase 1 — Fix crítico: Langflow usa PostgreSQL (P0)
+## Fase 1 — Fix crítico: Langflow usa PostgreSQL (P0) ✅ CONCLUÍDA
 
 **Estimativa:** 30 minutos  
-**Bloqueio:** nenhum
+**Bloqueio:** nenhum  
+**Entregue:** 2026-04-04
 
 ### 1.1 — Script de init do PostgreSQL (schema + role)
 
@@ -98,16 +99,17 @@ docker exec rid-db psql -U rid -d rid -c "\dn langflow"
 docker exec rid-db psql -U rid -d rid -c "\du langflow"
 
 # Confirmar health check Langflow após arranque
-curl -s http://localhost:7860/health | python3 -m json.tool
+curl -s http://localhost:7861/health | python3 -m json.tool
 # Expected: {"status":"ok","chat":"ok","db":"ok"}
+# ✅ VALIDADO: GET /health → 200, 15 tabelas no schema `langflow` (Alembic OK)
 ```
 
 ---
 
-## Fase 2 — Multi-tenancy: workspace Langflow por tenant (P1)
+## Fase 2 — Multi-tenancy: workspace Langflow por tenant (P1) 🔄 EM CURSO
 
 **Estimativa:** 2–3 horas  
-**Bloqueio:** Fase 1 concluída
+**Bloqueio:** Fase 1 ✅
 
 ### 2.1 — Adicionar `langflow_workspace_id` ao modelo `Customer`
 

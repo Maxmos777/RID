@@ -1,10 +1,10 @@
 # ADR-009 — Integração Django ↔ Langflow: Base de Dados Partilhada e Multi-tenancy via Workspaces
 
 **Data:** 2026-04-04
-**Estado:** Proposed
+**Estado:** Accepted
 **Autores:** RID Platform Team
 **Revisores:** Tech Lead, Backend Engineer
-**Contexto de código:** `docker-compose.yml`, `backend/apps/tenants/models.py`, `backend/api/services/langflow_workspace.py` (a criar), `docs/plans/2026-04-04-langflow-database-integration.md`
+**Contexto de código:** `docker-compose.yml`, `backend/apps/tenants/models.py`, `backend/api/services/langflow_workspace.py`, `backend/apps/tenants/langflow_pg_bootstrap.py`, `backend/apps/tenants/management/commands/ensure_langflow_schema.py`, `docs/plans/2026-04-04-langflow-database-integration.md`
 
 ---
 
@@ -22,7 +22,9 @@ No projecto legado (RockItDown), a dor operacional foi descrita como "dois banco
 
 ### 1. Langflow usa PostgreSQL na mesma instância **e na mesma database** que o Django
 
-Configuramos `LANGFLOW_DATABASE_URL` para a database `rid` (a mesma que `POSTGRES_DB`), com um **role PostgreSQL dedicado** `langflow` cujo `search_path` por defeito é `langflow, public`. O Alembic do Langflow cria todas as tabelas no schema `langflow`; o Django continua a usar `public` e os schemas de tenant via `django-tenants`, sem `TENANT_SCHEMA_EXCLUDE_LIST` para `langflow` porque o ORM Django nunca referencia esse schema.
+Configuramos `LANGFLOW_DATABASE_URL` para a database `rid` (a mesma que `POSTGRES_DB`), com um **role PostgreSQL dedicado** `langflow` cujo `search_path` é exclusivamente `langflow` (sem `public`). O Alembic do Langflow cria todas as tabelas no schema `langflow`; o Django continua a usar `public` e os schemas de tenant via `django-tenants`, sem `TENANT_SCHEMA_EXCLUDE_LIST` para `langflow` porque o ORM Django nunca referencia esse schema.
+
+> **Nota (2026-04-04):** o `search_path` inicial incluía `public`, o que causava o Alembic a detectar tabelas Django como "extra" e falhar no arranque com "mismatch between models and database". Corrigido restringindo `search_path` a `langflow` apenas, e adicionando `options=-csearch_path=langflow` na `LANGFLOW_DATABASE_URL`.
 
 ```
 PostgreSQL server (rid-db)
@@ -31,7 +33,7 @@ PostgreSQL server (rid-db)
         └── schema langflow             ← Langflow (Alembic), role `langflow` + search_path
 ```
 
-O script de init (`/docker-entrypoint-initdb.d/01-langflow-schema.sh`) cria o role, o schema e os privilégios no primeiro arranque com `pgdata` vazio. Volumes já inicializados: aplicar `infra/docker/langflow-existing-volume.sql` manualmente.
+O DDL de bootstrap (role, schema, privilégios) é gerido via **management command Django** `ensure_langflow_schema` (módulo `langflow_pg_bootstrap.py`), executado pelo serviço one-shot `langflow-pg-bootstrap` no compose antes do `langflow`. Esta abordagem substitui o script de shell `/docker-entrypoint-initdb.d/` (agora no-op em `infra/docker/01-langflow-schema.sh`) e é idempotente — pode ser re-executada em qualquer estado do volume.
 
 ### 2. Multi-tenancy via workspaces Langflow
 
@@ -75,9 +77,9 @@ Arquitectura de comunicação:
 
 ## Consequências Negativas / Trade-offs
 
-- **Script de init só corre com `pgdata` vazio:** O `01-langflow-schema.sh` corre apenas na primeira inicialização. Volumes existentes requerem `infra/docker/langflow-existing-volume.sql` (ou equivalente) aplicado manualmente.
+- **Bootstrap via management command (idempotente):** O serviço `langflow-pg-bootstrap` corre `ensure_langflow_schema` em cada `up`, garantindo que o role/schema existe. O script shell `01-langflow-schema.sh` foi mantido como no-op em `infra/docker/` por compatibilidade histórica.
 - **Password URL:** `LANGFLOW_DATABASE_URL` usa o role `langflow`; em produção usar palavra-passe forte e, se necessário, encoding na URL.
-- **API de workspaces pode variar entre versões:** O Langflow 1.8.3 pode expor o conceito de workspace como `/api/v1/workspaces/` ou `/api/v1/folders/` (variou entre minor releases). Verificar contra o swagger em `http://localhost:7860/docs` antes de implementar a Fase 2. Mitigação: o serviço `langflow_workspace.py` isola este detalhe — mudança de endpoint afecta apenas 1 ficheiro.
+- **API de workspaces usa `/api/v1/projects/` no Langflow 1.8.3:** O Langflow 1.8.3 usa `projects` como conceito de workspace (não `workspaces/` nem `folders/`). Verificado via swagger em `http://localhost:7861/docs`. O serviço `langflow_workspace.py` isola este detalhe — mudança de endpoint afecta apenas 1 ficheiro.
 - **Provisioning de workspace falha silenciosamente:** O signal `post_save` captura excepções e loga sem propagar, para não bloquear a criação do tenant. Um tenant pode ser criado sem `langflow_workspace_id`. Mitigação: health check de tenant no painel de admin; alerta de monitorização para erros de provisioning.
 - **Tenant context em FastAPI routes (M2 dependency):** O `add_user_to_workspace` no auto-login bridge requer o `langflow_workspace_id` do tenant actual, que por sua vez requer resolver o tenant a partir do request. Este mecanismo faz parte do M2 (FastAPI API Layer). Até M2, o utilizador fica no workspace default e o `add_user_to_workspace` é chamado apenas quando o contexto de tenant estiver disponível.
 - **Webhook sync eventual (M3+):** Até à Fase 3, o Django não tem visibilidade directa das execuções Langflow para billing/reporting. Se billing por uso for necessário antes de M3, requer solução temporária (polling ou sincronização manual).
@@ -115,21 +117,33 @@ grep -q langflow-pg-bootstrap /home/RID/docker-compose.yml
 - `backend/apps/accounts/models.py` — modelo `TenantUser` (campos `langflow_user_id`, `langflow_api_key`)
 - `backend/api/services/langflow_client.py` — bridge HTTP existente
 - `backend/api/routers/langflow_auth.py` — auto-login bridge (a actualizar na Fase 2)
-- `backend/api/services/langflow_workspace.py` — serviço de provisioning (a criar)
+- `backend/api/services/langflow_workspace.py` — serviço de provisioning (implementado)
+- `backend/apps/tenants/langflow_pg_bootstrap.py` — DDL idempotente (role, schema, grants)
+- `backend/apps/tenants/management/commands/ensure_langflow_schema.py` — management command
 - `docs/plans/2026-04-04-langflow-database-integration.md` — plano de implementação detalhado
 - ADR-003 — Arquitectura híbrida Django + FastAPI
 - ADR-008 — Personalização do Frontend Langflow (integração via API REST oficial)
 
 ---
 
-## Apêndice — Bug P0 detectado em análise (2026-04-04)
+## Apêndice — Bugs detectados e resolvidos
 
-### IB-001 — Langflow usa SQLite sem volume no docker-compose.yml
+### IB-001 — Langflow usava SQLite sem volume no docker-compose.yml ✅ RESOLVIDO
 
-**Descoberto durante:** brainstorm de arquitectura de integração.
+**Descoberto durante:** brainstorm de arquitectura de integração (2026-04-04).
 
-**Sintoma:** após `docker compose down && docker compose up`, o health check Langflow retorna `{"status":"ok"}` mas todos os flows, utilizadores e API keys foram apagados. Os `langflow_user_id` e `langflow_api_key` em `TenantUser` apontam para utilizadores inexistentes; o auto-login retorna 401.
+**Sintoma:** após `docker compose down && docker compose up`, o health check Langflow retornava `{"status":"ok"}` mas todos os flows, utilizadores e API keys tinham sido apagados.
 
-**Causa:** `docker-compose.yml` não define `LANGFLOW_DATABASE_URL` → Langflow usa SQLite em `/root/.langflow/langflow.db` dentro do container → sem volume, o ficheiro é efémero.
+**Causa:** `docker-compose.yml` não definia `LANGFLOW_DATABASE_URL` → Langflow usava SQLite em `/root/.langflow/langflow.db` dentro do container → sem volume, o ficheiro era efémero.
 
-**Correcção:** Fase 1 deste ADR — `LANGFLOW_DATABASE_URL=postgresql://langflow:<pass>@db:5432/rid` + init `01-langflow-schema.sh` + `depends_on: db`.
+**Correcção aplicada:** `LANGFLOW_DATABASE_URL=postgresql://langflow:...@db:5432/rid?options=-csearch_path=langflow` + serviço `langflow-pg-bootstrap` (management command `ensure_langflow_schema`) + `depends_on: db`.
+
+### IB-002 — Alembic detectava tabelas Django como "extra" e falhava no arranque ✅ RESOLVIDO
+
+**Descoberto durante:** validação end-to-end (2026-04-04).
+
+**Sintoma:** `RuntimeError: There's a mismatch between the models and the database.` — Alembic propunha `remove_table` para todas as tabelas Django do schema `public`.
+
+**Causa:** `search_path = langflow, public` no role — o Alembic introspectava o schema `public` e encontrava tabelas Django que não existem nos modelos do Langflow.
+
+**Correcção aplicada:** `search_path` restrito a `langflow` apenas (no bootstrap e na URL via `options=-csearch_path=langflow`).

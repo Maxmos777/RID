@@ -19,8 +19,10 @@ que marca o anterior como `Superseded by ADR-NNN`.
 | [ADR-007](ADR-007-frontend-monorepo-pnpm-vite-django-static.md) | Frontend monorepo (pnpm) + Vite → Django static (assets) | 🟡 Proposed | 2026-04-03 | P3 | `frontend/apps/rockitdown/`, `frontend/packages/shared/`, `backend/templates/`, `backend/static/` |
 | [ADR-008](ADR-008-langflow-frontend-customization-overlay.md) | Personalização do Frontend Langflow via Customization Overlay + Custom Docker Image | 🟡 Proposed | 2026-04-04 | P2 | `docker-compose.yml`, `langflow-custom/` |
 | [ADR-009](ADR-009-langflow-database-integration.md) | Integração Django ↔ Langflow: Base de Dados Partilhada e Multi-tenancy via Workspaces | 🟡 Proposed | 2026-04-04 | P2 | `docker-compose.yml`, `apps/tenants/models.py`, `api/services/langflow_workspace.py` |
+| [ADR-010](ADR-010-git-monorepo-root-vendored-ring.md) | Repositório Git na raiz do RID (monorepo) e Ring vendored | ✅ Accepted | 2026-04-04 | P3 | `.gitignore`, `.gitattributes`, `docs/ring-upstream.md`, `README.md` |
+| [ADR-011](ADR-011-ring-backend-engineer-python-agent.md) | Agente Ring `ring:backend-engineer-python` e skill Cursor | ✅ Accepted | 2026-04-04 | P3 | `ring/dev-team/agents/backend-engineer-python.md`, `.cursor/skills/backend-engineer-python/` |
 
-**Score de compliance:** 6/9 (67%) — Score P0: 2/2 (✅ COMPLETO). ADR-007, ADR-008 e ADR-009 ainda não têm testes de compliance associados.
+**Score de compliance:** 7/11 (64%) — Score P0: 2/2 (✅ COMPLETO). Testes pytest em `test_architecture.py` cobrem ADR-001 a ADR-006 (15 testes) e ADR-009 (4 testes). ADR-007, ADR-008, ADR-010 e ADR-011 ainda não têm testes de compliance automatizados nesse ficheiro (ver secções Compliance em cada ADR).
 
 ---
 

@@ -38,14 +38,14 @@ O problema real no legado RockItDown não era ter dois schemas de dados distinto
 
 ```
 ANTES:  Django PostgreSQL (rid-db)   +   Langflow SQLite (container efémero)
-DEPOIS: Django PostgreSQL (rid-db)   +   Langflow PostgreSQL (rid-db, database 'langflow')
+DEPOIS: Uma database `rid` no rid-db: Django (public + schemas tenant) + Langflow (schema `langflow`, role dedicado)
 ```
 
-Um único servidor PostgreSQL (`rid-db`) com dois databases:
-- `rid` — Django (django-tenants: schemas public + tenant)
-- `langflow` — Langflow (Alembic: tabelas próprias, completamente isoladas)
+Um único servidor PostgreSQL (`rid-db`) e **uma database** `rid`:
+- **Django** — role `rid`, schemas `public` + `tenant_*` (django-tenants)
+- **Langflow** — role `langflow`, `search_path = langflow, public`; Alembic cria tabelas no schema `langflow`
 
-**Não partilhamos schemas.** Langflow corre as suas migrações Alembic na database `langflow`; Django nunca toca nessa database. Zero risco de interferência com `django-tenants`.
+O Django ORM não referencia o schema `langflow`. O Langflow não usa o ORM Django. Isolamento por **role + search_path**, sem segunda database.
 
 Para visibilidade de dados Langflow no Django (billing, audit, reporting — M3+): webhook-driven sync. Django não acede directamente à database Langflow. O Django ORM permanece a única fonte de verdade para o Django.
 
@@ -56,43 +56,34 @@ Para visibilidade de dados Langflow no Django (billing, audit, reporting — M3+
 **Estimativa:** 30 minutos  
 **Bloqueio:** nenhum
 
-### 1.1 — Script de init do PostgreSQL
+### 1.1 — Script de init do PostgreSQL (schema + role)
 
-Criar `infra/docker/langflow-db-init.sql`:
-```sql
--- Cria a database 'langflow' se não existir.
--- Executado automaticamente pelo postgres:16-alpine no primeiro arranque
--- (apenas ficheiros em /docker-entrypoint-initdb.d/ são executados se pgdata estiver vazio).
-SELECT 'CREATE DATABASE langflow'
-  WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'langflow')\gexec
-```
+Criar `infra/docker/01-langflow-schema.sh` (executado pelo `postgres:16-alpine` em `/docker-entrypoint-initdb.d/`):
+- Cria o role `langflow` (login, palavra-passe `LANGFLOW_DB_PASSWORD`, default `langflow`)
+- Cria o schema `langflow` com `AUTHORIZATION langflow`
+- `ALTER ROLE langflow IN DATABASE rid SET search_path TO langflow, public`
+- Revoga `PUBLIC` no schema; privilégios por defeito para o role `langflow`
+
+Para volumes **já** inicializados: aplicar `infra/docker/langflow-existing-volume.sql` com `psql`.
 
 ### 1.2 — Actualizar docker-compose.yml
 
-No serviço `db`, adicionar mount do script de init:
-```yaml
-db:
-  image: postgres:16-alpine
-  volumes:
-    - pgdata:/var/lib/postgresql/data
-    - ./infra/docker/langflow-db-init.sql:/docker-entrypoint-initdb.d/01-langflow-db.sql
-```
+No serviço `db`, montar o script e passar `LANGFLOW_DB_PASSWORD` (opcional no host).
 
-No serviço `langflow`, adicionar:
+No serviço `langflow`:
 ```yaml
 langflow:
   environment:
     LANGFLOW_SUPERUSER: admin
     LANGFLOW_SUPERUSER_PASSWORD: adminpassword
-    LANGFLOW_DATABASE_URL: "postgresql://rid:rid@db:5432/langflow"
+    LANGFLOW_DB_PASSWORD: ${LANGFLOW_DB_PASSWORD:-langflow}
+    LANGFLOW_DATABASE_URL: postgresql://langflow:${LANGFLOW_DB_PASSWORD:-langflow}@db:5432/rid
   depends_on:
     db:
       condition: service_healthy
 ```
 
-> **Nota:** O script SQL só é executado quando `pgdata` está vazio (primeiro `docker compose up`).
-> Em ambientes existentes com `pgdata` já inicializado, criar a database manualmente:
-> `docker exec rid-db psql -U rid -c "CREATE DATABASE langflow;"`
+> **Nota:** O init só corre com `pgdata` vazio. Ambientes existentes: SQL manual acima (e migrar dados da antiga DB `langflow` se existir).
 
 ### 1.3 — Verificação
 
@@ -100,11 +91,11 @@ langflow:
 # Confirmar que Langflow usa PostgreSQL
 docker compose --profile langflow exec langflow \
   python -c "import os; print(os.getenv('LANGFLOW_DATABASE_URL', 'NOT SET'))"
-# Expected: postgresql://rid:rid@db:5432/langflow
+# Expected: postgresql://langflow:...@db:5432/rid
 
-# Confirmar que a database langflow existe no rid-db
-docker exec rid-db psql -U rid -c "\l" | grep langflow
-# Expected: langflow | rid | UTF8 | ...
+# Confirmar schema e role
+docker exec rid-db psql -U rid -d rid -c "\dn langflow"
+docker exec rid-db psql -U rid -d rid -c "\du langflow"
 
 # Confirmar health check Langflow após arranque
 curl -s http://localhost:7860/health | python3 -m json.tool
@@ -394,7 +385,7 @@ async def on_execution_complete(
 
 | Dimensão | Decisão | Alternativa rejeitada |
 |---|---|---|
-| Storage Langflow | PostgreSQL (database `langflow` no rid-db) | SQLite (data loss); schema partilhado (risco django-tenants) |
+| Storage Langflow | PostgreSQL schema `langflow` na database `rid` (role dedicado) | SQLite (data loss); segunda database (opcional, não usada nesta variante) |
 | ORM | Django ORM para dados RID; Langflow usa SQLAlchemy internamente — sem cruzamento | Expor SQLAlchemy no Django (coupling); reescrever Langflow ORM |
 | Visibilidade Langflow → Django | Webhook-driven sync (M3+) | Acesso directo à DB Langflow (coupling a internals) |
 | Multi-tenancy Langflow | Workspace por tenant; `langflow_workspace_id` em `Customer` | Workspace global (isolamento nulo) |
@@ -409,6 +400,9 @@ async def on_execution_complete(
 grep "LANGFLOW_DATABASE_URL" /home/RID/docker-compose.yml | grep -q "postgresql"
 echo "LANGFLOW_DATABASE_URL usa PostgreSQL: $?"
 
+grep "LANGFLOW_DATABASE_URL" /home/RID/docker-compose.yml | grep -q "/rid"
+echo "LANGFLOW aponta à database rid: $?"
+
 # 2. Customer tem langflow_workspace_id
 grep "langflow_workspace_id" /home/RID/backend/apps/tenants/models.py
 echo "langflow_workspace_id em Customer: $?"
@@ -417,7 +411,11 @@ echo "langflow_workspace_id em Customer: $?"
 grep -A 5 "depends_on" /home/RID/docker-compose.yml | grep -q "db"
 echo "depends_on db: $?"
 
-# 4. Sem acesso directo à DB Langflow a partir do Django (sem import sqlalchemy no código RID)
+# 4. Init schema Langflow
+test -f /home/RID/infra/docker/01-langflow-schema.sh
+echo "init script: $?"
+
+# 5. Sem acesso directo à DB Langflow a partir do Django (sem import sqlalchemy no código RID)
 grep -r "import sqlalchemy" /home/RID/backend/apps/ /home/RID/backend/api/
 echo "Sem import sqlalchemy (0 = ok): $?"
 ```
@@ -432,11 +430,11 @@ O conceito de "workspace" no Langflow mapeou para "folders" em algumas versões 
 
 **Mitigação:** wrapper de serviço (`langflow_workspace.py`) isola este detalhe — mudança de endpoint afecta apenas 1 ficheiro.
 
-### R-002 — Script SQL de init só corre com pgdata vazio
+### R-002 — Script de init só corre com pgdata vazio
 
-O script `01-langflow-db.sql` é executado pelo `postgres:16-alpine` apenas na primeira inicialização (quando `pgdata` está vazio). Ambientes de desenvolvimento com `pgdata` existente precisam de criação manual.
+O script `01-langflow-schema.sh` é executado apenas na primeira inicialização (`pgdata` vazio). Volumes existentes precisam de `infra/docker/langflow-existing-volume.sql` (ou equivalente) aplicado manualmente.
 
-**Mitigação:** Documentado em Fase 1.3. Alternativa: usar `POSTGRES_MULTIPLE_DATABASES` via script custom em vez de SQL puro.
+**Mitigação:** Documentado na Fase 1. Quem migra da variante com database `langflow` separada deve fazer dump/restore para o schema `langflow` dentro de `rid`.
 
 ### R-003 — Provisioning de workspace falha silenciosamente
 

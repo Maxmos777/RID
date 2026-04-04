@@ -135,7 +135,7 @@ services:
     profiles:
       - langflow
     ports:
-      - "7860:7860"
+      - "7861:7860"   # host:7861 -> container:7860 (evita conflito com processo local na 7860)
     environment:
       LANGFLOW_SUPERUSER: admin
       LANGFLOW_SUPERUSER_PASSWORD: adminpassword

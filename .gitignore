@@ -1,0 +1,42 @@
+# Secrets and local env (never commit)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+.eggs/
+dist/
+build/
+wheels/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Node / pnpm
+node_modules/
+.pnpm-store/
+frontend/dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+
+# Django collectstatic output (if used)
+backend/staticfiles/
+
+# Logs
+*.log
+
+# Optional: local Langflow / build caches inside customization tree
+langflow-custom/node_modules/

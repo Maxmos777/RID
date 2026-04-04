@@ -1,0 +1,55 @@
+# syntax=docker/dockerfile:1.4
+#
+# Langflow custom image para o RID Platform
+# Aplica os overrides de langflow-custom/customization/ sobre o mecanismo
+# oficial src/frontend/src/customization/ do Langflow (ADR-008).
+#
+# Build: docker compose build langflow
+# Tag produzida: langflowai/langflow:1.8.3-rid
+
+ARG LANGFLOW_VERSION=1.8.3
+
+# ─── Stage 1: build do frontend customizado ───────────────────────────────────
+FROM node:20-alpine AS frontend-builder
+
+ARG LANGFLOW_VERSION
+
+RUN apk add --no-cache git
+
+WORKDIR /build
+
+# Sparse checkout — só src/frontend (~10MB vs ~500MB do repo completo)
+RUN git clone \
+      --filter=blob:none \
+      --no-checkout \
+      --depth=1 \
+      --branch v${LANGFLOW_VERSION} \
+      https://github.com/langflow-ai/langflow.git . \
+  && git sparse-checkout init --cone \
+  && git sparse-checkout set src/frontend \
+  && git checkout
+
+WORKDIR /build/src/frontend
+
+# Cache de dependências separado do COPY de overrides
+# (re-instala só se package.json mudar, não quando customization/ muda)
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline
+
+# Copiar overrides RID por cima do customization/ oficial
+COPY customization/ src/customization/
+
+RUN npm run build
+
+# ─── Stage 2: imagem final = langflow base + frontend customizado ──────────────
+FROM langflowai/langflow:${LANGFLOW_VERSION}
+
+# Path confirmado via: docker run --rm langflowai/langflow:1.8.3 find / -name "index.html" -path "*/frontend/*"
+# Resultado: /app/.venv/lib/python3.12/site-packages/langflow/frontend/index.html
+# Vite outputa para build/ (não dist/) — confirmado nos logs de build
+COPY --from=frontend-builder /build/src/frontend/build/ \
+     /app/.venv/lib/python3.12/site-packages/langflow/frontend/
+
+LABEL org.opencontainers.image.version="${LANGFLOW_VERSION}-rid"
+LABEL org.opencontainers.image.description="Langflow ${LANGFLOW_VERSION} with RID Platform customizations"
+LABEL org.opencontainers.image.source="https://github.com/langflow-ai/langflow"

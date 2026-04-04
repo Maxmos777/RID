@@ -1,0 +1,114 @@
+name: rid-platform
+
+# =============================================================================
+# Rede partilhada entre todos os serviços
+# =============================================================================
+networks:
+  rid-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes persistentes
+# =============================================================================
+volumes:
+  pgdata:
+    driver: local
+  redis-data:
+    driver: local
+
+# =============================================================================
+# Serviços
+# =============================================================================
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 — base de dados principal
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: rid-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rid
+      POSTGRES_PASSWORD: rid
+      POSTGRES_DB: rid
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"   # host:5433 -> container:5432 (evita conflito com PG local)
+    networks:
+      - rid-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rid -d rid"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Redis 7 — cache + sessões
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: rid-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - rid-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # ---------------------------------------------------------------------------
+  # Backend — Django 6 + FastAPI via Uvicorn ASGI
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: rid-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      # Sobrepõe os hosts do .env para apontar para os containers
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    networks:
+      - rid-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Langflow — plataforma de fluxos LLM (perfil opcional)
+  # ---------------------------------------------------------------------------
+  langflow:
+    image: langflowai/langflow:1.8.3-rid   # imagem customizada RID (ADR-008)
+    build:
+      context: ./langflow-custom
+      dockerfile: Dockerfile.langflow
+      args:
+        LANGFLOW_VERSION: "1.8.3"
+    container_name: rid-langflow
+    restart: unless-stopped
+    profiles:
+      - langflow
+    ports:
+      - "7860:7860"
+    environment:
+      LANGFLOW_SUPERUSER: admin
+      LANGFLOW_SUPERUSER_PASSWORD: adminpassword
+    networks:
+      - rid-network

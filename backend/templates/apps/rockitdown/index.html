@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}RockItDown{% endblock %}
+
+{% block head_extra %}
+  {# Em dev (vite dev), os assets podem vir de :5173 via proxy. Em build final, Django serve via {% static %}. #}
+  <link rel="stylesheet" href="{% static 'apps/rockitdown/assets/index.css' %}" />
+{% endblock %}
+
+{% block body %}
+  <script id="app-config" type="application/json">
+    {{ app_config_json|safe }}
+  </script>
+
+  <div id="root"></div>
+
+  <script type="module" src="{% static 'apps/rockitdown/assets/index.js' %}"></script>
+{% endblock %}
+

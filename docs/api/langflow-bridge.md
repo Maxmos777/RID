@@ -10,30 +10,33 @@ Os endpoints da bridge destinados ao browser assumem **sessão Django** (cookie 
 
 ## Obter credenciais Langflow (auto-login)
 
-Obtém JWT e API key Langflow para o utilizador RID actualmente autenticado por sessão.
+Obtém JWT e API key do **utilizador de serviço Langflow** do tenant, e o UUID do **workspace** (project Langflow) associado ao `Customer`.
 
 ### Request
 
 ```http
 GET /api/v1/langflow/auth/auto-login HTTP/1.1
-Host: <backend-rid>
-Cookie: <sessionid=...>
+Host: <domínio-do-tenant-ou-localhost-com-tenant_schema>
+Cookie: sessionid=<...>
 Accept: application/json
 ```
 
-**Parâmetros de query (estado actual):** nenhum obrigatório.
+**Query (opcional):**
 
-**Planeado:** poderá existir `tenant_schema` (ou mecanismo equivalente) quando a bridge passar a emitir credenciais do utilizador de serviço do tenant; consulte nota em [Integração bridge Langflow](../guides/langflow-bridge-integration.md).
+| Parâmetro | Obrigatório | Descrição |
+|-----------|-------------|-----------|
+| `tenant_schema` | Sim, se o utilizador tiver **mais do que um** tenant activo (`TenantMembership`). | `schema_name` do `Customer` (ex.: `acme_corp`). |
+
+Se o utilizador tem um único membership, o tenant é inferido pelo **cabeçalho `Host`** (deve corresponder a um `Domain` registado). Sem `Host` válido: `400`.
 
 ### Resposta `200 OK`
 
-Corpo JSON (campos estáveis no código actual):
-
 | Campo | Tipo | Descrição |
 |--------|------|-------------|
-| `access_token` | string | JWT Langflow para sessão do cliente. |
-| `api_key` | string | API key Langflow para chamadas com `x-api-key` (ou fluxo suportado pela vossa versão Langflow). |
-| `langflow_user_id` | string ou `null` | Identificador do utilizador Langflow no lado RID/TenantUser; pode ser `null` em casos extremos. |
+| `access_token` | string | JWT Langflow (utilizador de serviço do tenant). |
+| `api_key` | string | API key Langflow para `x-api-key` / chamadas autenticadas. |
+| `workspace_id` | string | UUID do project Langflow (`Customer.langflow_workspace_id`). |
+| `langflow_user_id` | `null` | Deprecated; reservado para compatibilidade; sempre `null` neste fluxo. |
 
 Exemplo:
 
@@ -41,7 +44,8 @@ Exemplo:
 {
   "access_token": "<jwt>",
   "api_key": "<api-key>",
-  "langflow_user_id": "550e8400-e29b-41d4-a716-446655440000"
+  "workspace_id": "550e8400-e29b-41d4-a716-446655440000",
+  "langflow_user_id": null
 }
 ```
 
@@ -49,16 +53,18 @@ Exemplo:
 
 | Status | Quando ocorre |
 |--------|----------------|
-| `401` | Sem sessão válida (utilizador não autenticado no RID). |
-| `502` | Langflow indisponível ou resposta inválida (ex.: sem `access_token`). O `detail` descreve a causa. |
-
-**Nota:** outros códigos (`400`, `403`, `404`, `409`) podem ser introduzidos quando o contrato multi-tenant por serviço estiver completo (validação de tenant, conflitos de provisionamento). Esta página deve ser actualizada nessa altura.
+| `400` | `Host` em falta; ou utilizador com **vários** tenants sem `tenant_schema`. |
+| `401` | Sem sessão válida (não autenticado no RID). |
+| `403` | Sem `TenantMembership` activo para o tenant resolvido; ou sem membership em nenhum tenant. |
+| `404` | `tenant_schema` desconhecido; ou domínio sem `Domain` registado. |
+| `409` | `Customer.langflow_workspace_id` ainda `null` (workspace não provisionado). |
+| `502` | Langflow indisponível ou resposta inválida (sem `access_token` / `api_key`). |
 
 ---
 
 ## Saúde da integração (placeholder)
 
-Existe um router com prefixo `/langflow` e rota `GET /langflow/health` na aplicação FastAPI. O encaminhamento exacto face ao prefixo `/api` do ASGI pode variar conforme a configuração de deployment; trate como **não contractu** até haver testes ou documentação de produto que fixem o URL público.
+Existe um router com prefixo `/langflow` e rota `GET /langflow/health` na aplicação FastAPI. O URL público exacto face ao mount `/api` pode variar; trate como **não contractu** até haver testes ou documentação de produto que o fixem.
 
 ---
 

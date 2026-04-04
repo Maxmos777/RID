@@ -1,25 +1,27 @@
 # Integração com a bridge Langflow
 
-Este guia explica como o frontend obtém credenciais Langflow através do backend RID, usando a sessão Django autenticada. Serve para quem implementa ou mantém o embed Langflow e variáveis de ambiente associadas.
+Este guia explica como o frontend obtém credenciais Langflow através do backend RID, usando a sessão Django autenticada. A bridge segue a **Opção C (service-user)**: o browser recebe o JWT e a API key do **utilizador de serviço do tenant** (`rid.svc.<schema>@tenant.rid`), mais o `workspace_id` do project Langflow do tenant.
 
 ## Pré-requisitos
 
 - Utilizador autenticado no RID (sessão com cookie).
-- Backend com integração Langflow activa (`MULTI_TENANT_ENABLED` e `LANGFLOW_BASE_URL` quando aplicável ao vosso ambiente).
+- `TenantMembership` activo para o tenant em causa.
+- `Customer.langflow_workspace_id` já provisionado (via `provision_tenant_langflow_project`); caso contrário a bridge responde `409`.
+- `LANGFLOW_BASE_URL` e `LANGFLOW_SUPERUSER_API_KEY` configurados no backend quando a integração Langflow estiver activa.
 - CORS configurado para o origin do frontend em desenvolvimento (ver `CORSMiddleware` em `api/main.py`).
 
-## Fluxo resumido (estado actual)
+## Fluxo resumido
 
 1. O utilizador inicia sessão no RID (Django).
-2. O frontend chama o endpoint da bridge com `credentials: 'include'` para enviar o cookie de sessão.
-3. O backend valida a sessão, obtém ou cria o utilizador Langflow correspondente e devolve `access_token` e `api_key`.
-4. O frontend guarda tokens (por exemplo em cookies httpOnly definidos pelo próprio frontend ou pelo backend, conforme a vossa política) e usa-os nas chamadas ao Langflow (por exemplo cabeçalho `x-api-key` ou Bearer, conforme a API exposta pelo Langflow).
+2. O frontend chama `GET /api/v1/langflow/auth/auto-login` com `credentials: 'include'` e o cabeçalho `Host` que corresponde ao domínio do tenant (ou, em alternativa, o query param `tenant_schema` — ver abaixo).
+3. O backend valida a sessão, confirma membership, resolve o `Customer`, obtém JWT + API key do utilizador de serviço Langflow (com cache da key em `Customer.langflow_service_api_key`) e devolve `access_token`, `api_key` e `workspace_id`.
+4. O frontend usa `workspace_id` no embed Langflow (project/Folder do tenant) e as credenciais conforme a API Langflow (`x-api-key` e/ou Bearer).
 
-O padrão actual é **credenciais Langflow por utilizador RID** (email como username no Langflow). Isto está descrito em `docs/adr/ADR-009-langflow-database-integration.md` e implementado em `api/routers/langflow_auth.py`.
+Implementação: `api/routers/langflow_auth.py`, `api/services/langflow_client.py` (`get_tenant_service_credentials`), provisionamento: `api/services/langflow_workspace.py`. Ver [ADR-009](../adr/ADR-009-langflow-database-integration.md).
 
 ## Chamada desde o browser
 
-Use sempre o mesmo origin que o backend espera para CORS, e inclua credenciais:
+Use o mesmo origin que o backend espera para CORS, e inclua credenciais:
 
 ```javascript
 const res = await fetch(`${API_BASE}/api/v1/langflow/auth/auto-login`, {
@@ -28,36 +30,36 @@ const res = await fetch(`${API_BASE}/api/v1/langflow/auth/auto-login`, {
   headers: { Accept: 'application/json' },
 });
 if (!res.ok) throw new Error(`auto-login failed: ${res.status}`);
-const { access_token, api_key, langflow_user_id } = await res.json();
+const { access_token, api_key, workspace_id, langflow_user_id } = await res.json();
 ```
 
-- **`API_BASE`**: URL do backend RID (por exemplo `http://localhost:8000`). Não confundir com `LANGFLOW_BASE_URL` (servidor Langflow, tipicamente `http://localhost:7861` no compose).
-- **`credentials: 'include'`** é obrigatório para o cookie de sessão Django ser enviado.
+**Notas:**
 
-Referência de contrato HTTP e códigos de erro: [Langflow bridge — referência de API](../api/langflow-bridge.md).
+- **`API_BASE`**: URL do backend RID (por exemplo `http://localhost:8000`). Não confundir com `LANGFLOW_BASE_URL` (servidor Langflow, tipicamente `http://localhost:7861` no compose).
+- Nos browsers, o cabeçalho **`Host` é definido automaticamente** pelo runtime a partir do hostname de `API_BASE` — não é possível (nem seguro) forçá-lo em `fetch`. Para a bridge resolver o tenant pelo domínio, o utilizador deve aceder ao backend **no hostname do tenant** (ex.: `https://acme.rid.localhost` com o mesmo API atrás de um reverse proxy que preserve o host), **ou** usar sempre `?tenant_schema=...` quando o API estiver num host partilhado (ex.: `localhost:8000`).
+- **`langflow_user_id`** na resposta está **deprecated** e vem `null` neste fluxo; não depender dele.
+
+### Vários tenants por utilizador
+
+Se o utilizador tiver **mais do que um** `TenantMembership` activo, é **obrigatório** passar o schema explícito:
+
+```text
+GET /api/v1/langflow/auth/auto-login?tenant_schema=<schema_name>
+```
+
+O backend valida que o utilizador é membro desse schema. O cabeçalho `Host` pode ser genérico (ex.: `localhost`) neste modo, desde que a sessão seja válida.
+
+Referência HTTP completa: [Langflow bridge — referência de API](../api/langflow-bridge.md).
 
 ## Variáveis de ambiente relevantes
 
 | Variável | Papel |
 |----------|--------|
-| `LANGFLOW_BASE_URL` | URL base do serviço Langflow (o backend usa-a para falar com a API Langflow). |
-| `LANGFLOW_SUPERUSER_API_KEY` | Chave de superuser para operações administrativas (por exemplo provisionamento de workspace por tenant). Opcional em dev; ver `.env.example`. |
+| `LANGFLOW_BASE_URL` | URL base do serviço Langflow (o backend usa-a para login e API keys). |
+| `LANGFLOW_SUPERUSER_API_KEY` | Chave de superuser: criação de utilizadores e projects na fase de provisionamento (`provision_tenant_langflow_project`). |
 | `LANGFLOW_SUPERUSER` / `LANGFLOW_SUPERUSER_PASSWORD` | Credenciais do superuser Langflow em ambientes que as usem (ex.: compose de desenvolvimento). |
 
-Lista completa e comentários: `backend/.env.example`.
-
-## Multi-tenant e schema
-
-Com `django-tenants`, o utilizador autenticado pertence ao tenant correcto; a bridge usa o contexto de request já resolvido pelo middleware. Não é necessário enviar o schema do tenant no query string **no estado actual** do endpoint `auto-login`.
-
-## Contrato planeado (alinhamento futuro)
-
-O produto pode evoluir para **credenciais por tenant** (utilizador de serviço Langflow por `Customer`, `workspace_id` persistido, eventual query `tenant_schema` ou cabeçalho explícito). Quando esse contrato estiver implementado:
-
-- Actualize este guia e [langflow-bridge.md](../api/langflow-bridge.md) para reflectir campos novos (por exemplo `workspace_id`) e deprecações (por exemplo `langflow_user_id` apenas para migração).
-- Garanta que o frontend obtém `workspace_id` e envia-o ao embed Langflow conforme a documentação do produto nessa versão.
-
-Até lá, trate a secção acima como roadmap; o comportamento em produção segue o fluxo «por utilizador» descrito no início deste guia.
+Lista completa: `backend/.env.example`.
 
 ## Ver também
 

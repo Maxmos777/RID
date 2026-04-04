@@ -1,15 +1,12 @@
 """
-Langflow auto-login router.
+Langflow auto-login router (Opção C: credenciais do utilizador de serviço por tenant).
 
-GET /api/langflow/auth/auto-login
+GET /api/v1/langflow/auth/auto-login
   → requer Django session auth (AuthenticatedUser)
-  → cria ou obtém utilizador Langflow para o utilizador Django
-  → devolve JWT + api_key ao frontend
-  → frontend guarda tokens em cookies httpOnly
-
-Bridge pattern: Django session → credenciais Langflow pessoais.
-  - Primeira visita: cria conta Langflow, activa, obtém JWT + API key
-  - Visitas seguintes: re-login para JWT fresco (API key em cache)
+  → resolve tenant (Host ou ?tenant_schema=)
+  → verifica TenantMembership
+  → exige Customer.langflow_workspace_id provisionado (409 se ausente)
+  → devolve JWT + api_key do serviço + workspace_id
 
 ADR-001: sync_to_async thread_sensitive=True para ORM em contexto async
 ADR-002: utilizadores no schema público (TenantUser)
@@ -17,15 +14,14 @@ ADR-009: auth Langflow via API Key (x-api-key), não via password superuser
 """
 from __future__ import annotations
 
-import hashlib
-import uuid
+from typing import Annotated, Any
 
 from asgiref.sync import sync_to_async
-from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Header, HTTPException, Query, status
+from pydantic import BaseModel, Field
 
 from api.deps import AuthenticatedUser
-from api.services.langflow_client import get_or_create_langflow_user
+from api.services.langflow_client import get_tenant_service_credentials
 
 router = APIRouter()
 
@@ -33,74 +29,126 @@ router = APIRouter()
 class AutoLoginResponse(BaseModel):
     access_token: str
     api_key: str
-    langflow_user_id: str | None = None
+    workspace_id: str = Field(
+        ...,
+        description="UUID do project Langflow (Folder) do tenant.",
+    )
+    langflow_user_id: str | None = Field(
+        None,
+        description="Deprecated: bridge por utilizador de serviço; sempre null.",
+    )
 
 
-def _derive_langflow_password(user_id: str) -> str:
-    """
-    Deriva deterministicamente uma password Langflow a partir do UUID do utilizador Django.
+def _bridge_context_sync(
+    user,
+    host_header: str,
+    tenant_schema_query: str | None,
+) -> tuple[str, Any]:
+    from django.db import connection
 
-    Usa SHA-256 para gerar uma password estável entre requests mas
-    nunca armazenada em texto simples. O sufixo 'rid-lf-v1' é o
-    namespace da versão — mudar invalida todas as passwords existentes.
-    """
-    raw = f"{user_id}:rid-lf-v1"
-    return hashlib.sha256(raw.encode()).hexdigest()[:32]
+    from apps.accounts.models import TenantMembership
+    from apps.tenants.models import Customer, Domain
 
-
-def _save_langflow_credentials(user, api_key: str, user_id: str) -> None:
-    """Persiste credenciais Langflow no TenantUser. Corre em thread dedicada (ADR-001)."""
-    changed_fields: list[str] = []
-    if api_key and user.langflow_api_key != api_key:
-        user.langflow_api_key = api_key
-        changed_fields.append("langflow_api_key")
-    if user_id:
+    if tenant_schema_query is not None and tenant_schema_query.strip() != "":
+        schema = tenant_schema_query.strip()
+        if not TenantMembership.objects.filter(
+            user=user,
+            tenant_schema=schema,
+            is_active=True,
+        ).exists():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not a member of this tenant",
+            )
         try:
-            parsed_id = uuid.UUID(user_id)
-            if user.langflow_user_id != parsed_id:
-                user.langflow_user_id = parsed_id
-                changed_fields.append("langflow_user_id")
-        except ValueError:
-            pass
-    if changed_fields:
-        user.save(update_fields=changed_fields)
+            tenant = Customer.objects.get(schema_name=schema)
+        except Customer.DoesNotExist:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Tenant not found",
+            )
+        connection.set_tenant(tenant)
+        return schema, tenant
+
+    hostname = host_header.split(":")[0].strip()
+    if not hostname:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Host header is required",
+        )
+    try:
+        domain = Domain.objects.select_related("tenant").get(domain=hostname)
+    except Domain.DoesNotExist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tenant not found for domain: {hostname}",
+        )
+    tenant = domain.tenant
+    schema = tenant.schema_name
+
+    active_qs = TenantMembership.objects.filter(user=user, is_active=True)
+    count = active_qs.count()
+    if count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not a member of any tenant",
+        )
+    if count > 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "tenant_schema query parameter is required when the user belongs "
+                "to multiple tenants"
+            ),
+        )
+    if not active_qs.filter(tenant_schema=schema).exists():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not a member of this tenant",
+        )
+    connection.set_tenant(tenant)
+    return schema, tenant
+
+
+def _persist_service_api_key(customer_pk: int, api_key: str) -> None:
+    from apps.tenants.models import Customer
+
+    Customer.objects.filter(pk=customer_pk).update(langflow_service_api_key=api_key)
 
 
 @router.get("/auth/auto-login", response_model=AutoLoginResponse)
-async def auto_login(current_user: AuthenticatedUser) -> AutoLoginResponse:
+async def auto_login(
+    current_user: AuthenticatedUser,
+    host: Annotated[str, Header()] = "",
+    tenant_schema: str | None = Query(None, alias="tenant_schema"),
+) -> AutoLoginResponse:
     """
-    Bridge endpoint: troca sessão Django por credenciais Langflow pessoais.
-
-    Fluxo:
-      1. Se credenciais em cache (TenantUser.langflow_api_key) → re-login para JWT fresco
-      2. Se não → criar conta Langflow, activar, persistir user_id + api_key
+    Bridge: sessão Django → credenciais Langflow do utilizador de serviço do tenant.
     """
-    langflow_username = current_user.email
-    langflow_password = _derive_langflow_password(str(current_user.pk))
+    await sync_to_async(current_user.refresh_from_db, thread_sensitive=True)()
 
-    result, err = await get_or_create_langflow_user(langflow_username, langflow_password)
+    schema_name, customer = await sync_to_async(
+        _bridge_context_sync,
+        thread_sensitive=True,
+    )(current_user, host, tenant_schema)
+
+    await sync_to_async(customer.refresh_from_db, thread_sensitive=True)()
+
+    if customer.langflow_workspace_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Langflow workspace not provisioned for this tenant yet",
+        )
+
+    result, err = await get_tenant_service_credentials(
+        schema_name,
+        customer.langflow_service_api_key or None,
+    )
     if err:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Langflow unavailable: {err}",
         )
-
-    returned_user_id: str = result.get("user_id", "")
-    returned_api_key: str = result.get("api_key", "")
-
-    # Persistir credenciais novas (ou actualizar se mudaram) — ADR-001
-    if returned_api_key or returned_user_id:
-        await sync_to_async(_save_langflow_credentials, thread_sensitive=True)(
-            current_user,
-            returned_api_key,
-            returned_user_id,
-        )
-
-    # Usar api_key em cache se Langflow não devolveu uma nova (user já existia)
-    final_api_key = returned_api_key or (current_user.langflow_api_key or "")
-    final_user_id = returned_user_id or (
-        str(current_user.langflow_user_id) if current_user.langflow_user_id else None
-    )
 
     access_token: str = result.get("access_token", "")
     if not access_token:
@@ -109,8 +157,22 @@ async def auto_login(current_user: AuthenticatedUser) -> AutoLoginResponse:
             detail="Langflow returned no access_token",
         )
 
+    api_key: str = result.get("api_key", "")
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Langflow returned no api_key",
+        )
+
+    if not customer.langflow_service_api_key:
+        await sync_to_async(_persist_service_api_key, thread_sensitive=True)(
+            customer.pk,
+            api_key,
+        )
+
     return AutoLoginResponse(
         access_token=access_token,
-        api_key=final_api_key,
-        langflow_user_id=final_user_id,
+        api_key=api_key,
+        workspace_id=str(customer.langflow_workspace_id),
+        langflow_user_id=None,
     )

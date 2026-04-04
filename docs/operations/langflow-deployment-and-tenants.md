@@ -1,6 +1,6 @@
 # Implantação Langflow e tenants
 
-Runbook para operadores: base de dados partilhada com schema `langflow`, bootstrap DDL, compose e variáveis que afectam o provisionamento de tenants e a bridge RID ↔ Langflow.
+Runbook para operadores: base de dados partilhada com schema `langflow`, bootstrap DDL, compose, provisionamento de workspace por tenant e bridge RID ↔ Langflow (utilizador de serviço).
 
 ## Arquitectura resumida
 
@@ -33,7 +33,7 @@ Consulte `backend/.env.example` para a lista completa. Resumo operacional:
 | `LANGFLOW_DATABASE_URL` | No serviço Langflow: connstring com user `langflow`, DB `rid`, `search_path=langflow`. |
 | `LANGFLOW_DB_PASSWORD` | Palavra-passe do role `langflow`; referenciada no compose e no bootstrap. |
 | `LANGFLOW_BASE_URL` | No backend RID: URL para a API Langflow (ex.: `http://langflow:7860` em rede Docker ou `http://localhost:7861` a partir do host). |
-| `LANGFLOW_SUPERUSER_API_KEY` | Chave de API de superuser para criar utilizadores/workspaces via API. Se ausente, funcionalidades que dependam dela degradam com graciosidade (ex.: `Customer.langflow_workspace_id` pode ficar vazio). |
+| `LANGFLOW_SUPERUSER_API_KEY` | Chave de API de superuser: criação do utilizador de serviço e do project na fase de provisionamento. Se ausente, `langflow_workspace_id` pode não ser preenchido. |
 
 ## Bootstrap do schema
 
@@ -47,12 +47,31 @@ Requisitos: variáveis `DATABASE_*` correctas e acesso ao Postgres. O comando de
 
 ## Utilizadores Langflow e tenants
 
-**Estado actual (bridge):** o endpoint `GET /api/v1/langflow/auth/auto-login` associa credenciais Langflow **ao utilizador RID** (email, utilizador activo no Langflow). Campos em `TenantUser` (por exemplo `langflow_api_key`, `langflow_user_id`) persistem o estado.
+### Provisionamento (background)
 
-**Planeado / produto:** utilizador de serviço por tenant (`rid.svc.<schema>@tenant.rid`), membership no workspace e `Customer.langflow_workspace_id`. Quando implementado, actualize este runbook com:
+Quando um `Customer` é criado, o fluxo em `apps/tenants/services.py` / sinais chama `provision_tenant_langflow_project` (`api/services/langflow_workspace.py`), que:
 
-- passos de verificação por tenant (workspace criado, API key de serviço armazenada de forma segura);
-- rotação de chaves e impacto na bridge.
+1. Cria (ou reutiliza) o utilizador Langflow `rid.svc.<schema>@tenant.rid` com password derivada.
+2. Cria o **project** (workspace) nomeado `rid-<schema>`.
+3. Persiste o UUID do project em **`Customer.langflow_workspace_id`**.
+
+### Bridge (`auto-login`)
+
+O endpoint `GET /api/v1/langflow/auth/auto-login` obtém JWT + API key via **`get_tenant_service_credentials`** (`api/services/langflow_client.py`):
+
+- Primeira vez (sem cache): login como serviço + `POST /api/v1/api_key/`; a API key é guardada em **`Customer.langflow_service_api_key`**.
+- Visitas seguintes: apenas login para JWT fresco; reutiliza a key em cache.
+
+Requisitos para `200 OK`: utilizador Django com membership no tenant, `langflow_workspace_id` não nulo, Langflow acessível.
+
+### Campos no modelo `Customer`
+
+| Campo | Função |
+|--------|--------|
+| `langflow_workspace_id` | UUID do project Langflow (Folder). |
+| `langflow_service_api_key` | Cache da API key do utilizador de serviço (opcional até ao primeiro auto-login bem-sucedido). |
+
+Os campos `TenantUser.langflow_*` não são usados pela bridge actual; podem permanecer na base para dados legados ou usos futuros.
 
 ## Superuser e chaves API
 
@@ -62,8 +81,9 @@ Requisitos: variáveis `DATABASE_*` correctas e acesso ao Postgres. O comando de
 ## Resolução de problemas
 
 1. **Langflow não arranca após bootstrap:** verifique logs de `langflow-pg-bootstrap` e se `ensure_langflow_schema` terminou com exit code 0.
-2. **502 na bridge `auto-login`:** confirme `LANGFLOW_BASE_URL` acessível a partir do processo do backend, TLS/firewall, e que o Langflow responde à API de autenticação utilizada pelo cliente em `api/services/langflow_client.py`.
-3. **Tabelas no schema errado:** confirme que `LANGFLOW_DATABASE_URL` inclui `search_path=langflow` (codificado no compose como `options=-csearch_path%3Dlangflow`).
+2. **409 na bridge `auto-login`:** o tenant ainda não tem `langflow_workspace_id` — verifique logs de provisionamento, `LANGFLOW_SUPERUSER_API_KEY` e conectividade a `LANGFLOW_BASE_URL`.
+3. **502 na bridge:** confirme `LANGFLOW_BASE_URL` acessível a partir do processo do backend e que o login do utilizador de serviço funciona (password derivada alinhada com `derive_tenant_service_password` em `langflow_workspace.py`).
+4. **Tabelas no schema errado:** confirme que `LANGFLOW_DATABASE_URL` inclui `search_path=langflow` (no compose: `options=-csearch_path%3Dlangflow`).
 
 ## Ver também
 

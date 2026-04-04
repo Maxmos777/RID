@@ -36,7 +36,8 @@ def tenant_service_username(schema_name: str) -> str:
     return f"rid.svc.{safe}@tenant.rid"
 
 
-def _derive_tenant_service_password(schema_name: str) -> str:
+def derive_tenant_service_password(schema_name: str) -> str:
+    """Password determinística do utilizador de serviço Langflow (nunca mostrada a humanos)."""
     raw = f"{schema_name}:rid-lf-tenant-svc-v1:{settings.SECRET_KEY[:16]}"
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
@@ -63,7 +64,7 @@ async def provision_tenant_langflow_project(
         return "", "LANGFLOW_SUPERUSER_API_KEY not configured — workspace não provisionado"
 
     username = tenant_service_username(tenant_schema)
-    password = _derive_tenant_service_password(tenant_schema)
+    password = derive_tenant_service_password(tenant_schema)
     base = settings.LANGFLOW_BASE_URL.rstrip("/")
     superuser_headers = {"x-api-key": api_key}
 

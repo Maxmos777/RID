@@ -15,12 +15,25 @@ Todas as funções retornam (result, error) — sem excepções propagadas.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, TypedDict
 
 import httpx
 from django.conf import settings
 
+from api.services.langflow_workspace import (
+    derive_tenant_service_password,
+    tenant_service_username,
+)
+
 logger = logging.getLogger(__name__)
+
+
+class LangflowUserCredentials(TypedDict, total=False):
+    """Resultado de get_or_create_langflow_user / get_tenant_service_credentials."""
+
+    access_token: str
+    api_key: str
+    user_id: str
 
 
 async def get_or_create_langflow_user(
@@ -103,4 +116,60 @@ async def get_or_create_langflow_user(
         "access_token": user_token,
         "api_key": personal_api_key,
         "user_id": user_id,
+    }, None
+
+
+async def get_tenant_service_credentials(
+    tenant_schema: str,
+    cached_api_key: str | None,
+) -> tuple[LangflowUserCredentials, str | None]:
+    """
+    JWT + API key do utilizador de serviço Langflow do tenant.
+
+    Não cria o utilizador — isso é feito em provision_tenant_langflow_project.
+    Se ``cached_api_key`` estiver definido, só renova o JWT (POST /login).
+    """
+    username = tenant_service_username(tenant_schema)
+    password = derive_tenant_service_password(tenant_schema)
+    base = settings.LANGFLOW_BASE_URL.rstrip("/")
+
+    async with httpx.AsyncClient(base_url=base, timeout=30) as client:
+        login_resp = await client.post(
+            "/api/v1/login",
+            data={"username": username, "password": password},
+        )
+        if login_resp.status_code != 200:
+            return {}, (
+                f"service user login failed: {login_resp.status_code} — "
+                f"{login_resp.text}"
+            )
+        user_token: str = login_resp.json().get("access_token", "")
+        if not user_token:
+            return {}, "login returned no access_token"
+
+        if cached_api_key:
+            return {
+                "access_token": user_token,
+                "api_key": cached_api_key,
+                "user_id": "",
+            }, None
+
+        key_resp = await client.post(
+            "/api/v1/api_key/",
+            json={"name": f"rid-svc-{tenant_schema}"[:64]},
+            headers={"Authorization": f"Bearer {user_token}"},
+        )
+        if key_resp.status_code not in (200, 201):
+            return {}, (
+                f"api_key create failed: {key_resp.status_code} — {key_resp.text}"
+            )
+        new_key: str = key_resp.json().get("api_key", "")
+        if not new_key:
+            return {}, "api_key response missing api_key"
+
+    logger.info("Langflow service credentials refreshed schema=%s", tenant_schema)
+    return {
+        "access_token": user_token,
+        "api_key": new_key,
+        "user_id": "",
     }, None

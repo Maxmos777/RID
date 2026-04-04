@@ -46,6 +46,12 @@ class Customer(TenantMixin):
         unique=True,
         help_text="UUID do project Langflow (Folder) dedicado ao tenant.",
     )
+    langflow_service_api_key = models.CharField(
+        max_length=512,
+        null=True,
+        blank=True,
+        help_text="API key em cache do utilizador de serviço Langflow (rid.svc.<schema>).",
+    )
 
     class Meta:
         app_label = "tenants"

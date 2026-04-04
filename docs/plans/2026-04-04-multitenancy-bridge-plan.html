@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RID Platform — Plano Multi-tenant Langflow Bridge</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d2e; --surface2: #252840;
+    --accent: #6c63ff; --accent2: #00d4aa; --accent3: #ff6b6b;
+    --text: #e2e8f0; --text2: #94a3b8; --border: #2d3748;
+    --p0: #ff6b6b; --p1: #f59e0b; --p2: #6c63ff; --p3: #64748b;
+    --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #1a1d2e 0%, #252840 50%, #1e2035 100%); border-bottom: 1px solid var(--border); padding: 48px 40px 40px; }
+  .hero h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(90deg, #6c63ff, #00d4aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+  .hero p { color: var(--text2); font-size: 1rem; }
+  .meta { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
+  .badge { background: var(--surface2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: var(--text2); }
+  .badge.green { border-color: var(--green); color: var(--green); }
+  .badge.purple { border-color: var(--accent); color: var(--accent); }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 40px 60px; }
+  h2 { font-size: 1.4rem; font-weight: 600; color: var(--text); margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+  h3 { font-size: 1.1rem; font-weight: 600; color: var(--accent2); margin: 24px 0 12px; }
+  .section-title { display: flex; align-items: center; gap: 12px; margin: 40px 0 20px; }
+  .section-title h2 { margin: 0; border: none; }
+  .tag { font-size: 0.7rem; padding: 3px 10px; border-radius: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .tag.dev { background: rgba(108,99,255,0.2); color: var(--accent); border: 1px solid var(--accent); }
+  .tag.tw { background: rgba(0,212,170,0.2); color: var(--accent2); border: 1px solid var(--accent2); }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 20px 0; }
+  .flow-step { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; min-width: 140px; text-align: center; font-size: 0.85rem; }
+  .flow-step .num { font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+  .flow-step .label { color: var(--text); font-weight: 600; }
+  .flow-step .sub { color: var(--text2); font-size: 0.75rem; margin-top: 2px; }
+  .flow-arrow { color: var(--accent); font-size: 1.2rem; padding: 0 8px; }
+
+  /* Grid */
+  .grid { display: grid; gap: 20px; margin: 20px 0; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card.accent { border-color: var(--accent); }
+  .card.green { border-color: var(--green); }
+  .card.yellow { border-color: var(--yellow); }
+  .card-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+  .card-title.purple { color: var(--accent); }
+  .card-title.teal { color: var(--accent2); }
+  .card-title.green { color: var(--green); }
+  .card-title.yellow { color: var(--yellow); }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.875rem; }
+  th { background: var(--surface2); color: var(--text2); text-align: left; padding: 10px 14px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; color: var(--accent2); font-family: 'Fira Code', monospace; }
+
+  /* Priority badges */
+  .p0 { color: var(--p0); font-weight: 700; font-size: 0.8rem; }
+  .p1 { color: var(--p1); font-weight: 700; font-size: 0.8rem; }
+  .p2 { color: var(--p2); font-weight: 700; font-size: 0.8rem; }
+  .p3 { color: var(--p3); font-weight: 700; font-size: 0.8rem; }
+
+  /* Status */
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+  .status::before { content: ''; width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .status.done::before { background: var(--green); }
+  .status.todo::before { background: var(--yellow); }
+  .status.new::before { background: var(--accent); }
+  .status.deprecated::before { background: var(--p3); }
+
+  ul { padding-left: 20px; }
+  li { margin: 6px 0; color: var(--text2); font-size: 0.875rem; }
+  li strong { color: var(--text); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Multi-tenant Langflow Bridge — Plano integrado</h1>
+  <p>Síntese do brainstorm dev-team × tw-team para implementação e documentação</p>
+  <div class="meta">
+    <span class="badge green">2026-04-04</span>
+    <span class="badge purple">ADR-009</span>
+    <span class="badge">Opção C: service-user-only</span>
+    <span class="badge">3 agentes consultados</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- FLUXO APROVADO -->
+  <div class="section-title">
+    <h2>Fluxo aprovado</h2>
+    <span class="tag dev">design</span>
+  </div>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="num">1</div>
+      <div class="label">Django Login</div>
+      <div class="sub">session cookie</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="num">2</div>
+      <div class="label">auto-login bridge</div>
+      <div class="sub">?tenant_schema=</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="num">3</div>
+      <div class="label">Verify membership</div>
+      <div class="sub">TenantMembership</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="num">4</div>
+      <div class="label">Login serv. user</div>
+      <div class="sub">rid.svc.&lt;schema&gt;</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="num">5</div>
+      <div class="label">Return tokens</div>
+      <div class="sub">JWT + api_key + workspace_id</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="num">6</div>
+      <div class="label">Langflow embed</div>
+      <div class="sub">tenant workspace only</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- DEV-TEAM: IMPLEMENTAÇÃO -->
+  <div class="section-title">
+    <h2>Dev-team — Escopo de implementação</h2>
+    <span class="tag dev">ring:write-plan</span>
+  </div>
+
+  <div class="grid grid-3">
+    <div class="card accent">
+      <div class="card-title purple">langflow_client.py</div>
+      <ul>
+        <li><strong>Nova função</strong> <code>get_tenant_service_token(schema)</code></li>
+        <li>Reutiliza <code>tenant_service_username()</code> e <code>_derive_tenant_service_password()</code> de <code>langflow_workspace.py</code> — sem duplicação</li>
+        <li>Login como serv user → JWT + API key</li>
+        <li><strong>Não</strong> cria o utilizador (responsabilidade do provisioning)</li>
+      </ul>
+    </div>
+    <div class="card accent">
+      <div class="card-title purple">langflow_auth.py</div>
+      <ul>
+        <li>Adicionar <code>TenantSchema</code> dependency (já existe em <code>deps.py</code>)</li>
+        <li>Verificar <code>TenantMembership</code> do utilizador no tenant → 403 se não membro</li>
+        <li>Buscar <code>Customer</code> → verificar <code>langflow_workspace_id</code> → 409 se nulo</li>
+        <li>Incluir <code>workspace_id</code> na resposta</li>
+        <li>Deprecar <code>langflow_user_id</code> no response</li>
+      </ul>
+    </div>
+    <div class="card yellow">
+      <div class="card-title yellow">Customer model (nova migração)</div>
+      <ul>
+        <li>Novo campo: <code>langflow_service_api_key</code> (CharField, null=True)</li>
+        <li>Cache da API key do serviço para não criar nova key em cada auto-login</li>
+        <li>Migração: <code>0002_add_langflow_service_api_key</code></li>
+        <li>Alternativa: guardar em <code>settings</code> / Redis — trade-off a decidir</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Edge cases identificados pelo dev-team</h3>
+  <table>
+    <thead><tr><th>Cenário</th><th>Comportamento esperado</th><th>HTTP</th></tr></thead>
+    <tbody>
+      <tr><td>Utilizador não autenticado em Django</td><td>Não chega ao endpoint (AuthenticatedUser dependency)</td><td>401</td></tr>
+      <tr><td>Utilizador não é membro do tenant</td><td><code>TenantMembership</code> check → raise 403</td><td>403</td></tr>
+      <tr><td>Tenant não encontrado (schema inexistente)</td><td><code>Domain</code> não encontrado em <code>get_current_tenant()</code></td><td>404</td></tr>
+      <tr><td><code>Customer.langflow_workspace_id</code> é null</td><td>Workspace ainda não provisionado → raise 409 Conflict</td><td>409</td></tr>
+      <tr><td>Langflow indisponível</td><td>Login do serv user falha → raise 502</td><td>502</td></tr>
+      <tr><td>Utilizador membro de múltiplos tenants</td><td>Query param <code>tenant_schema</code> obrigatório; sem query param → 400</td><td>400</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Separação de responsabilidades</h3>
+  <table>
+    <thead><tr><th>Ficheiro</th><th>Responsabilidade</th><th>Chamado por</th></tr></thead>
+    <tbody>
+      <tr><td><code>langflow_workspace.py</code></td><td>Criar serv user + project (provisioning)</td><td><code>signals.py</code> (post_save Customer)</td></tr>
+      <tr><td><code>langflow_client.py</code></td><td>Login como serv user → tokens para frontend</td><td><code>langflow_auth.py</code> (auto-login)</td></tr>
+      <tr><td><code>langflow_auth.py</code></td><td>Bridge HTTP endpoint + verificação de membership</td><td>Frontend</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <!-- TW-TEAM: DOCUMENTAÇÃO -->
+  <div class="section-title">
+    <h2>TW-team — Inventário de documentação</h2>
+    <span class="tag tw">ring:functional-writer + ring:api-writer</span>
+  </div>
+
+  <h3>Documentos a criar (identificados pelos agentes)</h3>
+  <table>
+    <thead><tr><th>Prioridade</th><th>Documento</th><th>Tipo</th><th>Audiência</th><th>Caminho</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="p0">P0</span></td>
+        <td><strong>Langflow bridge integration</strong> — fluxo completo, contrato API, padrão frontend</td>
+        <td>Guia funcional</td>
+        <td>Programadores frontend/backend</td>
+        <td><code>docs/guides/langflow-bridge-integration.md</code></td>
+      </tr>
+      <tr>
+        <td><span class="p0">P0</span></td>
+        <td><strong>Langflow bridge API reference</strong> — endpoints, campos, erros, exemplos</td>
+        <td>Referência API</td>
+        <td>Programadores integradores</td>
+        <td><code>docs/api/langflow-bridge.md</code></td>
+      </tr>
+      <tr>
+        <td><span class="p0">P0</span></td>
+        <td><strong>Deploying and operating Langflow</strong> — variáveis, bootstrap, relação tenant↔workspace</td>
+        <td>Runbook operacional</td>
+        <td>DevOps / SRE / plataforma</td>
+        <td><code>docs/operations/langflow-deployment-and-tenants.md</code></td>
+      </tr>
+      <tr>
+        <td><span class="p1">P1</span></td>
+        <td><strong>Langflow local development</strong> — arranque, verificação, ordem de serviços</td>
+        <td>Guia dev</td>
+        <td>Programadores onboarding</td>
+        <td><code>docs/guides/langflow-local-development.md</code></td>
+      </tr>
+      <tr>
+        <td><span class="p1">P1</span></td>
+        <td><strong>Troubleshooting Langflow bridge</strong> — sintomas, diagnóstico, reparação</td>
+        <td>Runbook incidentes</td>
+        <td>Operações / programadores em incidentes</td>
+        <td><code>docs/operations/langflow-troubleshooting.md</code></td>
+      </tr>
+      <tr>
+        <td><span class="p2">P2</span></td>
+        <td><strong>Tenant onboarding — Langflow</strong> — o que o utilizador final tem acesso</td>
+        <td>Conteúdo produto</td>
+        <td>CS / produto / utilizadores finais</td>
+        <td><code>docs/product/tenant-langflow-access.md</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Campos da API com lacunas de documentação (API-writer)</h3>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title teal">GET /api/v1/langflow/auth/auto-login</div>
+      <table>
+        <thead><tr><th>Campo</th><th>Status</th><th>Lacuna</th></tr></thead>
+        <tbody>
+          <tr><td><code>tenant_schema</code></td><td><span class="status new">novo</span></td><td>Quando obrigatório, formato, validação</td></tr>
+          <tr><td><code>access_token</code></td><td><span class="status todo">pendente</span></td><td>TTL, não usar localStorage, renovação</td></tr>
+          <tr><td><code>api_key</code></td><td><span class="status todo">pendente</span></td><td>Uso como x-api-key, não expor em logs</td></tr>
+          <tr><td><code>workspace_id</code></td><td><span class="status new">novo</span></td><td>UUID do project, uso no iframe Langflow</td></tr>
+          <tr><td><code>langflow_user_id</code></td><td><span class="status deprecated">deprecated</span></td><td>Marcar deprecated, pode ser null</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title teal">GET /api/v1/langflow/workspace (novo)</div>
+      <table>
+        <thead><tr><th>Campo</th><th>Status</th><th>Lacuna</th></tr></thead>
+        <tbody>
+          <tr><td><code>workspace_id</code></td><td><span class="status new">novo</span></td><td>Consistência com auto-login</td></tr>
+          <tr><td><code>project_name</code></td><td><span class="status new">novo</span></td><td>Padrão rid-&lt;schema&gt;, estabilidade</td></tr>
+          <tr><td><code>langflow_url</code></td><td><span class="status new">novo</span></td><td>HTTP vs HTTPS, uso em iframes</td></tr>
+          <tr><td><code>service_username</code></td><td><span class="status new">novo</span></td><td>Não é email humano, apenas identificador</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3>Erros HTTP a documentar</h3>
+  <table>
+    <thead><tr><th>Código</th><th>Estado no código</th><th>Deve documentar</th></tr></thead>
+    <tbody>
+      <tr><td><code>400</code></td><td>Não implementado</td><td>tenant_schema em falta quando utilizador tem múltiplos tenants</td></tr>
+      <tr><td><code>401</code></td><td>✅ Implementado</td><td>Cookie de sessão Django em falta</td></tr>
+      <tr><td><code>403</code></td><td>A implementar</td><td>Utilizador não membro do tenant</td></tr>
+      <tr><td><code>404</code></td><td>Parcial (TenantSchema)</td><td>Tenant não encontrado pelo Host/schema</td></tr>
+      <tr><td><code>409</code></td><td>A implementar</td><td>Workspace ainda não provisionado</td></tr>
+      <tr><td><code>502</code></td><td>✅ Implementado</td><td>Langflow indisponível</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <!-- PLANO DE EXECUÇÃO -->
+  <div class="section-title">
+    <h2>Plano de execução combinado</h2>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card green">
+      <div class="card-title green">Implementação (dev-team)</div>
+      <ol style="padding-left: 18px;">
+        <li style="margin: 8px 0; color: var(--text);">Refactoring: exportar <code>tenant_service_username</code> / <code>_derive_tenant_service_password</code> de <code>langflow_workspace.py</code></li>
+        <li style="margin: 8px 0; color: var(--text);">Nova função <code>get_tenant_service_token(schema)</code> em <code>langflow_client.py</code></li>
+        <li style="margin: 8px 0; color: var(--text);">Migração: <code>Customer.langflow_service_api_key</code></li>
+        <li style="margin: 8px 0; color: var(--text);">Reescrever <code>auto_login</code> em <code>langflow_auth.py</code> com TenantSchema + membership check</li>
+        <li style="margin: 8px 0; color: var(--text);">Novo endpoint <code>GET /api/langflow/workspace</code></li>
+        <li style="margin: 8px 0; color: var(--text);">Testes TDD + ADR-009 update</li>
+      </ol>
+    </div>
+    <div class="card accent">
+      <div class="card-title purple">Documentação (tw-team)</div>
+      <ol style="padding-left: 18px;">
+        <li style="margin: 8px 0; color: var(--text);">P0: <code>docs/guides/langflow-bridge-integration.md</code></li>
+        <li style="margin: 8px 0; color: var(--text);">P0: <code>docs/api/langflow-bridge.md</code></li>
+        <li style="margin: 8px 0; color: var(--text);">P0: <code>docs/operations/langflow-deployment-and-tenants.md</code></li>
+        <li style="margin: 8px 0; color: var(--text);">P1: <code>docs/guides/langflow-local-development.md</code></li>
+        <li style="margin: 8px 0; color: var(--text);">P1: <code>docs/operations/langflow-troubleshooting.md</code></li>
+        <li style="margin: 8px 0; color: var(--text);">P2: <code>docs/product/tenant-langflow-access.md</code></li>
+      </ol>
+    </div>
+  </div>
+
+  <div style="background: var(--surface2); border: 1px solid var(--border); border-left: 4px solid var(--accent2); border-radius: 8px; padding: 16px 20px; margin-top: 24px; font-size: 0.875rem; color: var(--text2);">
+    <strong style="color: var(--accent2);">Nota dos agentes TW:</strong>
+    A documentação P0 deve ser escrita <em>após</em> o contrato de API estar estabilizado (endpoints implementados e testados). Escrever antes introduz risco de divergência entre docs e código. Recomendado: implementação → testes passam → TW escreve → docs-reviewer revê.
+  </div>
+
+</div>
+</body>
+</html>

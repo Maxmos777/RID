@@ -80,6 +80,27 @@ Os campos `TenantUser.langflow_*` não são usados pela bridge actual; podem per
 
 ## Resolução de problemas
 
+### `DuplicateTable: relation "tenants_customer" already exists`
+
+Significa que as tabelas do app `tenants` já existem no PostgreSQL (por exemplo base criada com `migrate` antigo, SQL manual ou outro ambiente), mas a tabela **`django_migrations`** não marca `tenants.0001_add_langflow_workspace_id` como aplicada.
+
+**Antes de fazer *fake*, confirme** que `tenants_customer` já inclui as colunas esperadas pela migração inicial (nomeadamente `langflow_workspace_id`). Em caso de dúvida, compare com `\d tenants_customer` no `psql`.
+
+**Opção A — marcar só a 0001 como aplicada (recomendado se o schema já coincide com a 0001):**
+
+```bash
+cd backend && uv run python manage.py migrate_schemas --fake tenants 0001_add_langflow_workspace_id
+uv run python manage.py migrate_schemas
+```
+
+**Opção B — Django detecta tabelas iniciais e faz *fake-initial*:**
+
+```bash
+cd backend && uv run python manage.py migrate_schemas --fake-initial
+```
+
+Depois volte a correr `migrate_schemas` sem flags para aplicar migrações pendentes (ex.: `0002_customer_langflow_service_api_key`).
+
 1. **Langflow não arranca após bootstrap:** verifique logs de `langflow-pg-bootstrap` e se `ensure_langflow_schema` terminou com exit code 0.
 2. **409 na bridge `auto-login`:** o tenant ainda não tem `langflow_workspace_id` — verifique logs de provisionamento, `LANGFLOW_SUPERUSER_API_KEY` e conectividade a `LANGFLOW_BASE_URL`.
 3. **502 na bridge:** confirme `LANGFLOW_BASE_URL` acessível a partir do processo do backend e que o login do utilizador de serviço funciona (password derivada alinhada com `derive_tenant_service_password` em `langflow_workspace.py`).

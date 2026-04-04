@@ -140,8 +140,9 @@ services:
       LANGFLOW_SUPERUSER: admin
       LANGFLOW_SUPERUSER_PASSWORD: adminpassword
       LANGFLOW_DB_PASSWORD: ${LANGFLOW_DB_PASSWORD:-langflow}
-      # Mesma database rid que o Django; tabelas Langflow ficam no schema langflow (search_path no role).
-      LANGFLOW_DATABASE_URL: postgresql://langflow:${LANGFLOW_DB_PASSWORD:-langflow}@db:5432/rid
+      # Mesma database rid que o Django; tabelas Langflow ficam no schema langflow.
+      # options=-csearch_path=langflow isola o Alembic ao schema langflow (sem ver tabelas Django).
+      LANGFLOW_DATABASE_URL: postgresql://langflow:${LANGFLOW_DB_PASSWORD:-langflow}@db:5432/rid?options=-csearch_path%3Dlangflow
     networks:
       - rid-network
     depends_on:

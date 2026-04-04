@@ -76,9 +76,11 @@ def ensure_langflow_pg_prerequisites(*, password: str | None = None) -> None:
                 ),
             )
 
+            # search_path restrito ao schema langflow para que o Alembic
+            # não veja tabelas Django do schema public e reporte falsos conflitos.
             cursor.execute(
                 psql.SQL(
-                    "ALTER ROLE {} IN DATABASE {} SET search_path TO {}, public"
+                    "ALTER ROLE {} IN DATABASE {} SET search_path TO {}"
                 ).format(
                     psql.Identifier(LANGFLOW_PG_ROLE),
                     psql.Identifier(db_name),

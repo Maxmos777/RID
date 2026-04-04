@@ -226,3 +226,69 @@ def test_adr006_env_port_matches_compose():
         "Portas desincronizadas — Django pode não conseguir conectar. "
         "Ver docs/adr/ADR-006-postgres-port-5433-docker.md"
     )
+
+
+# ---------------------------------------------------------------------------
+# ADR-009: Langflow na mesma DB rid — bootstrap Django (não só shell/SQL manual)
+# ---------------------------------------------------------------------------
+
+
+def test_adr009_langflow_pg_bootstrap_module_exists():
+    """ADR-009: módulo Python idempotente para role/schema Langflow."""
+    path = BASE_DIR / "apps" / "tenants" / "langflow_pg_bootstrap.py"
+    assert path.is_file(), (
+        "ADR-009: langflow_pg_bootstrap.py ausente — DDL deve ter fonte única em Python. "
+        "Ver docs/adr/ADR-009-langflow-database-integration.md"
+    )
+
+
+def test_adr009_ensure_langflow_schema_command_exists():
+    """ADR-009: management command ensure_langflow_schema."""
+    path = (
+        BASE_DIR
+        / "apps"
+        / "tenants"
+        / "management"
+        / "commands"
+        / "ensure_langflow_schema.py"
+    )
+    assert path.is_file(), (
+        "ADR-009: ensure_langflow_schema management command ausente. "
+        "Ver docs/adr/ADR-009-langflow-database-integration.md"
+    )
+
+
+def test_adr009_compose_langflow_pg_bootstrap_pipeline():
+    """ADR-009: Compose orquestra job one-shot antes do contentor Langflow."""
+    compose_file = BASE_DIR.parent / "docker-compose.yml"
+    if not compose_file.exists():
+        pytest.skip("docker-compose.yml não encontrado")
+
+    src = compose_file.read_text()
+    assert "langflow-pg-bootstrap" in src, (
+        "ADR-009 VIOLADO: serviço langflow-pg-bootstrap ausente em docker-compose.yml. "
+        "Ver docs/adr/ADR-009-langflow-database-integration.md"
+    )
+    assert "ensure_langflow_schema" in src, (
+        "ADR-009 VIOLADO: comando ensure_langflow_schema não referenciado no compose. "
+        "Ver docs/adr/ADR-009-langflow-database-integration.md"
+    )
+    assert "service_completed_successfully" in src, (
+        "ADR-009 VIOLADO: Langflow deve depender do bootstrap com "
+        "condition: service_completed_successfully. "
+        "Ver docs/adr/ADR-009-langflow-database-integration.md"
+    )
+
+
+def test_adr009_compose_db_without_initdb_mount_for_langflow():
+    """ADR-009: não depender de shell em /docker-entrypoint-initdb.d/ para Langflow."""
+    compose_file = BASE_DIR.parent / "docker-compose.yml"
+    if not compose_file.exists():
+        pytest.skip("docker-compose.yml não encontrado")
+
+    src = compose_file.read_text()
+    assert "/docker-entrypoint-initdb.d/" not in src, (
+        "ADR-009 VIOLADO: mount docker-entrypoint-initdb.d/ no serviço db — "
+        "preferir manage.py ensure_langflow_schema (fonte única). "
+        "Ver docs/adr/ADR-009-langflow-database-integration.md"
+    )

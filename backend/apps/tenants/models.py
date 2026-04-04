@@ -38,6 +38,14 @@ class Customer(TenantMixin):
     )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Langflow 1.8.x: "workspace" do plano arquitectural = project (Folder) na API.
+    # Provisionado via utilizador de serviço por tenant (api/services/langflow_workspace.py).
+    langflow_workspace_id = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        help_text="UUID do project Langflow (Folder) dedicado ao tenant.",
+    )
 
     class Meta:
         app_label = "tenants"

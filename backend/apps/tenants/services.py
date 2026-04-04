@@ -11,16 +11,23 @@ Idempotência: safe to call multiple times — verifica existência antes de cri
 """
 from __future__ import annotations
 
+import logging
 import re
 from typing import Tuple
 
+from asgiref.sync import async_to_sync
 from django.core.management import call_command
 from django.utils.text import slugify
 from django_tenants.utils import tenant_context
 
 from apps.tenants.models import Customer, Domain
 
-RESERVED_SCHEMAS = frozenset({"public", "information_schema", "pg_catalog"})
+logger = logging.getLogger(__name__)
+
+# Inclui nomes que colidem com schemas de plataforma (Langflow em ADR-009).
+RESERVED_SCHEMAS = frozenset(
+    {"public", "information_schema", "pg_catalog", "langflow"},
+)
 
 
 def _normalize_schema_name(raw: str) -> str:
@@ -93,3 +100,45 @@ def provision_tenant_for_user(
     )
 
     return tenant, domain
+
+
+def run_new_customer_schema_and_langflow_provision(schema_name: str, customer_pk: int) -> None:
+    """
+    Pós-criação de Customer: cria schema PostgreSQL do tenant e project Langflow.
+
+    Corre tipicamente numa thread de fundo (ver signals). Erros são logados.
+    """
+    from api.services.langflow_workspace import provision_tenant_langflow_project
+
+    try:
+        instance = Customer.objects.get(pk=customer_pk)
+        instance.auto_create_schema = True
+        instance.save(update_fields=[])
+        instance.auto_create_schema = False
+        logger.info("Schema provisionado para tenant: %s", schema_name)
+
+        instance.refresh_from_db()
+        if instance.langflow_workspace_id:
+            return
+
+        project_id, lf_err = async_to_sync(provision_tenant_langflow_project)(
+            tenant_schema=instance.schema_name,
+            tenant_name=instance.name or instance.schema_name,
+        )
+        if lf_err:
+            logger.error(
+                "Langflow tenant project não provisionado para %s: %s",
+                schema_name,
+                lf_err,
+            )
+            return
+
+        Customer.objects.filter(pk=customer_pk).update(
+            langflow_workspace_id=project_id,
+        )
+    except Exception:
+        logger.exception(
+            "Falha ao provisionar schema/Langflow para tenant %s (pk=%s)",
+            schema_name,
+            customer_pk,
+        )

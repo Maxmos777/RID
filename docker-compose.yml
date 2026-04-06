@@ -168,8 +168,6 @@ services:
     restart: unless-stopped
     profiles:
       - langflow
-    ports:
-      - "7861:7860"   # host:7861 -> container:7860 (evita conflito com processo local na 7860)
     environment:
       LANGFLOW_SUPERUSER: admin
       LANGFLOW_SUPERUSER_PASSWORD: adminpassword
@@ -177,6 +175,8 @@ services:
       # Mesma database rid que o Django; tabelas Langflow ficam no schema langflow.
       # options=-csearch_path=langflow isola o Alembic ao schema langflow (sem ver tabelas Django).
       LANGFLOW_DATABASE_URL: postgresql://langflow:${LANGFLOW_DB_PASSWORD:-langflow}@db:5432/rid?options=-csearch_path%3Dlangflow
+      LANGFLOW_BASE_URL: "http://langflow:7860"
+      LANGFLOW_CORS_ORIGINS: "${LANGFLOW_CORS_ORIGINS:-https://app.rid.example.com}"
     networks:
       - rid-network
     depends_on:
@@ -184,3 +184,18 @@ services:
         condition: service_healthy
       langflow-pg-bootstrap:
         condition: service_completed_successfully
+    labels:
+      - "traefik.enable=true"
+      # Router: captura /flows e sub-paths (incluindo WebSocket)
+      - "traefik.http.routers.langflow.rule=PathPrefix(`/flows`)"
+      - "traefik.http.routers.langflow.entrypoints=web"
+      - "traefik.http.routers.langflow.middlewares=rid-auth@docker,langflow-ws@docker"
+      # Serviço interno — porta nativa do container Langflow
+      - "traefik.http.services.langflow.loadbalancer.server.port=7860"
+      # Middleware forwardAuth — valida sessão via Django antes de encaminhar
+      - "traefik.http.middlewares.rid-auth.forwardauth.address=http://backend:8000/internal/auth-check/"
+      - "traefik.http.middlewares.rid-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.rid-auth.forwardauth.authResponseHeaders=X-Auth-User,X-Auth-Tenant"
+      # Middleware WebSocket — passa headers Upgrade e Connection
+      - "traefik.http.middlewares.langflow-ws.headers.customrequestheaders.Connection=keep-alive, Upgrade"
+      - "traefik.http.middlewares.langflow-ws.headers.customrequestheaders.Upgrade=websocket"

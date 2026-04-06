@@ -11,7 +11,7 @@
   "custom_prompt": "",
   "status": "in_progress",
   "feedback_loop_completed": false,
-  "current_task_index": 4,
+  "current_task_index": 5,
   "current_gate": 0,
   "current_subtask_index": 0,
   "detected_dependencies": ["postgres", "redis", "langflow_internal"],
@@ -138,11 +138,11 @@
       "agent": "ring:frontend-engineer",
       "language": "typescript",
       "service_type": "frontend",
-      "status": "pending",
+      "status": "done",
       "feedback_loop_completed": false,
       "subtasks": [
-        {"id": "ST-005-01", "file": "gate-8-subtasks/T-005/ST-005-01-use-session-heartbeat-hook.md", "status": "pending"},
-        {"id": "ST-005-02", "file": "gate-8-subtasks/T-005/ST-005-02-session-expiry-overlay-component.md", "status": "pending"}
+        {"id": "ST-005-01", "file": "gate-8-subtasks/T-005/ST-005-01-use-session-heartbeat-hook.md", "status": "done"},
+        {"id": "ST-005-02", "file": "gate-8-subtasks/T-005/ST-005-02-session-expiry-overlay-component.md", "status": "done"}
       ],
       "gate_progress": {
         "implementation": {"status": "pending"},

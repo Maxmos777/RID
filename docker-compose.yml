@@ -88,6 +88,11 @@ services:
       DATABASE_HOST: db
       DATABASE_PORT: "5432"
       REDIS_URL: redis://redis:6379/0
+      # Browser no host → Docker: Host pode ser localhost, 127.0.0.1 ou host.docker.internal
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,host.docker.internal,testserver"
+      # Fallback tenant: evita Http404 "No tenant for hostname" sem linha em tenants_domain.
+      # Remover em produção se usar DEBUG=False e quiseres 404 estrito para hosts desconhecidos.
+      DJANGO_SHOW_PUBLIC_IF_NO_TENANT: "true"
     ports:
       - "8000:8000"
     networks:
@@ -119,6 +124,35 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Traefik v3.3.6 — edge router (auth gate para /flows/*)
+  # ---------------------------------------------------------------------------
+  traefik:
+    image: traefik:v3.3.6
+    container_name: rid-traefik
+    restart: unless-stopped
+    profiles:
+      - langflow
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=rid-network"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--log.level=INFO"
+      - "--accesslog=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./certs:/certs:ro"
+    networks:
+      - rid-network
+    depends_on:
+      backend:
+        condition: service_started
 
   # ---------------------------------------------------------------------------
   # Langflow — plataforma de fluxos LLM (perfil opcional)

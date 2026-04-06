@@ -189,7 +189,7 @@ services:
       # Router: captura /flows e sub-paths (incluindo WebSocket)
       - "traefik.http.routers.langflow.rule=PathPrefix(`/flows`)"
       - "traefik.http.routers.langflow.entrypoints=web"
-      - "traefik.http.routers.langflow.middlewares=rid-auth@docker,langflow-ws@docker"
+      - "traefik.http.routers.langflow.middlewares=rid-auth@docker,langflow-ws@docker,langflow-errors@docker"
       # Serviço interno — porta nativa do container Langflow
       - "traefik.http.services.langflow.loadbalancer.server.port=7860"
       # Middleware forwardAuth — valida sessão via Django antes de encaminhar
@@ -199,3 +199,8 @@ services:
       # Middleware WebSocket — passa headers Upgrade e Connection
       - "traefik.http.middlewares.langflow-ws.headers.customrequestheaders.Connection=keep-alive, Upgrade"
       - "traefik.http.middlewares.langflow-ws.headers.customrequestheaders.Upgrade=websocket"
+      # Middleware errors — redireciona 5xx para página de erro Django
+      - "traefik.http.middlewares.langflow-errors.errors.status=500-599"
+      - "traefik.http.middlewares.langflow-errors.errors.service=backend-error-svc@docker"
+      - "traefik.http.middlewares.langflow-errors.errors.query=/flows/error/"
+      - "traefik.http.services.backend-error-svc.loadbalancer.server.url=http://backend:8000"

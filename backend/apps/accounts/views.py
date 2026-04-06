@@ -7,6 +7,8 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.utils import ProgrammingError
 from django.middleware.csrf import get_token
+from django.shortcuts import render
+from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView
 
 
@@ -82,3 +84,9 @@ class RockItDownSPA(LoginRequiredMixin, TemplateView):
             }
         )
         return ctx
+
+
+@require_GET
+def flows_error(request):
+    """Standalone error page shown when the flows editor is unavailable."""
+    return render(request, "flows/error.html", status=200)

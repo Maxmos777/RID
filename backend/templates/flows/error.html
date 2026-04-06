@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor indisponivel — RockItDown</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      max-width: 480px;
+      width: 100%;
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+    .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+    h1 {
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: .75rem;
+    }
+    .description {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #555;
+      margin-bottom: 2rem;
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+      align-items: center;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 200px;
+      padding: .75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: #2563eb;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-primary:focus-visible {
+      outline: 3px solid #60a5fa;
+      outline-offset: 2px;
+    }
+    .btn-primary:disabled {
+      background: #93c5fd;
+      cursor: wait;
+    }
+    .link-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 200px;
+      padding: .75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2563eb;
+      text-decoration: none;
+      border: 2px solid #2563eb;
+      border-radius: 8px;
+      transition: background .15s, color .15s;
+    }
+    .link-secondary:hover { background: #eff6ff; }
+    .link-secondary:focus-visible {
+      outline: 3px solid #60a5fa;
+      outline-offset: 2px;
+    }
+    .feedback {
+      margin-top: 1rem;
+      font-size: .875rem;
+      min-height: 1.25rem;
+      color: #b91c1c;
+    }
+  </style>
+</head>
+<body>
+  <main role="main">
+    <div class="card">
+      <span class="icon" aria-hidden="true">&#9888;</span>
+      <h1>Editor de fluxos indisponivel</h1>
+      <p class="description">
+        O editor de fluxos nao esta acessivel no momento.
+        Tente novamente em alguns instantes ou volte ao painel principal.
+      </p>
+      <div class="actions">
+        <button
+          type="button"
+          class="btn-primary"
+          id="retry-btn"
+          aria-label="Tentar novamente — recarregar o editor de fluxos"
+        >Tentar novamente</button>
+        <a
+          href="/app/"
+          class="link-secondary"
+          aria-label="Voltar ao painel principal"
+        >Voltar ao painel</a>
+      </div>
+      <div class="feedback" id="feedback" aria-live="polite"></div>
+    </div>
+  </main>
+  <script>
+    (function() {
+      var btn = document.getElementById("retry-btn");
+      var feedback = document.getElementById("feedback");
+      btn.addEventListener("click", function() {
+        btn.disabled = true;
+        btn.textContent = "Verificando\u2026";
+        feedback.textContent = "";
+        fetch("/flows/", { method: "GET", credentials: "same-origin" })
+          .then(function(res) {
+            if (res.ok) {
+              window.location.href = "/flows/";
+            } else {
+              feedback.textContent = "O editor ainda nao esta disponivel. Tente novamente.";
+              btn.disabled = false;
+              btn.textContent = "Tentar novamente";
+            }
+          })
+          .catch(function() {
+            feedback.textContent = "Erro de conexao. Verifique sua rede e tente novamente.";
+            btn.disabled = false;
+            btn.textContent = "Tentar novamente";
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

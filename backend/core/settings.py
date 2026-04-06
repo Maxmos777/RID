@@ -4,6 +4,7 @@ Django settings for RID platform.
 Multi-tenant via django-tenants (schema-per-tenant).
 FastAPI mounted at /api/* via ASGI.
 """
+
 from __future__ import annotations
 
 import os
@@ -17,7 +18,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost").split(",")
+
+# Host header permitido (vírgulas). testserver = Django test Client por defeito.
+_raw_hosts = os.getenv(
+    "DJANGO_ALLOWED_HOSTS",
+    "localhost,127.0.0.1,host.docker.internal,testserver,backend",
+)
+ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(",") if h.strip()]
+
+# Reverso-proxy que define X-Forwarded-Host (opcional)
+USE_X_FORWARDED_HOST = os.getenv("DJANGO_USE_X_FORWARDED_HOST", "").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+# Proxy SSL header — Django reconhece HTTPS quando Traefik injeta X-Forwarded-Proto: https
+_proxy_ssl = os.getenv("DJANGO_SECURE_PROXY_SSL_HEADER", "").lower() in ("1", "true", "yes")
+if _proxy_ssl:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Cookies seguros — apenas em produção/staging (quando HTTPS está activo via Traefik)
+_secure_cookies = os.getenv("DJANGO_SESSION_COOKIE_SECURE", "").lower() in ("1", "true", "yes")
+SESSION_COOKIE_SECURE = _secure_cookies
+SESSION_COOKIE_SAMESITE = "Lax"  # protecção CSRF sem quebrar redirect flows
+CSRF_COOKIE_SECURE = _secure_cookies
 
 # ---------------------------------------------------------------------------
 # django-tenants: MUST be first in INSTALLED_APPS
@@ -46,17 +71,25 @@ TENANT_APPS = [
     "django.contrib.contenttypes",
 ]
 
-INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
+INSTALLED_APPS = list(SHARED_APPS) + [
+    app for app in TENANT_APPS if app not in SHARED_APPS
+]
 
 TENANT_MODEL = "tenants.Customer"
 TENANT_DOMAIN_MODEL = "tenants.Domain"
+
+# ---------------------------------------------------------------------------
+# Tenant por cabeçalho (X-Tenant-Id → HTTP_X_TENANT_ID). Vazio = só hostname.
+# ---------------------------------------------------------------------------
+_tenant_hdr = os.getenv("TENANT_RESOLUTION_HEADER", "HTTP_X_TENANT_ID").strip()
+TENANT_RESOLUTION_HEADER = _tenant_hdr or None
 
 # ---------------------------------------------------------------------------
 # Middleware
 # ---------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "django_tenants.middleware.main.TenantMainMiddleware",
+    "core.tenant_middleware.HeaderFirstTenantMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -68,12 +101,21 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "core.urls"
 
-# django-tenants: se o Host não tiver linha em tenants_domain (ex.: `localhost:8000`
-# em dev), em DEBUG servimos o URLconf público em vez de 404 "No tenant for hostname".
-# Em produção (DEBUG=False) cada hostname de cliente deve ter Domain registado.
-if DEBUG:
+# django-tenants: hostname sem entrada em tenants_domain → schema public (evita 404
+# em localhost / Docker sem Domain). PUBLIC_SCHEMA_URLCONF é obrigatório para esse ramo.
+# Em produção com DEBUG=False, não definir DJANGO_SHOW_PUBLIC_IF_NO_TENANT (risco de
+# expor URLconf público para hosts não mapeados).
+PUBLIC_SCHEMA_URLCONF = ROOT_URLCONF
+_tenant_public_fallback = DEBUG or os.getenv(
+    "DJANGO_SHOW_PUBLIC_IF_NO_TENANT", ""
+).lower() in ("1", "true", "yes")
+if _tenant_public_fallback:
     SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
-    PUBLIC_SCHEMA_URLCONF = ROOT_URLCONF
+
+# CSRF: origens adicionais (ex.: http://localhost:8000 se o proxy altera o host)
+_csrf_trusted = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").strip()
+if _csrf_trusted:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_trusted.split(",") if o.strip()]
 
 TEMPLATES = [
     {
@@ -124,20 +166,25 @@ CACHES = {
 # Auth
 # ---------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 AUTHENTICATION_BACKENDS = [
-    "core.auth_backends.TenantAwareBackend",       # user@tenant-domain
-    "django.contrib.auth.backends.ModelBackend",
+    "core.auth_backends.TenantAwareBackend",  # user@tenant-domain (não é e-mail público)
+    # allauth antes do ModelBackend: login por e-mail (ACCOUNT_LOGIN_METHODS) não usa USERNAME_FIELD.
     "allauth.account.auth_backends.AuthenticationBackend",
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 AUTH_USER_MODEL = "accounts.TenantUser"
 
+# LoginRequiredMixin (ex.: /app/) e fluxo allauth
+LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/app/"
 LOGOUT_REDIRECT_URL = "/"
 
@@ -158,10 +205,10 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # ---------------------------------------------------------------------------
-# Internationalisation
+# Internationalisation (pt-BR — datas, admin e gettext por defeito)
 # ---------------------------------------------------------------------------
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+LANGUAGE_CODE = "pt-br"
+TIME_ZONE = "America/Sao_Paulo"
 USE_I18N = True
 USE_TZ = True
 
@@ -190,6 +237,7 @@ LANGFLOW_SUPERUSER = os.getenv("LANGFLOW_SUPERUSER") or "admin"
 LANGFLOW_SUPERUSER_PASSWORD = os.environ.get("LANGFLOW_SUPERUSER_PASSWORD")
 if not LANGFLOW_SUPERUSER_PASSWORD and not DEBUG:
     from django.core.exceptions import ImproperlyConfigured
+
     raise ImproperlyConfigured("LANGFLOW_SUPERUSER_PASSWORD must be set in production")
 # API Key do superuser Langflow — gerada em Settings → API Keys.
 # Ausente → langflow_workspace_id fica null (graceful degradation; tenant cria-se na mesma).
@@ -203,4 +251,5 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 if not DEBUG and not STRIPE_SECRET_KEY:
     from django.core.exceptions import ImproperlyConfigured
+
     raise ImproperlyConfigured("STRIPE_SECRET_KEY must be set in production")

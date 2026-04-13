@@ -1,0 +1,199 @@
+---
+screen: Langflow Unavailable — Página de erro RID
+route: /flows/* (servida pelo proxy/gate quando upstream indisponível)
+gate: 1
+date: 2026-04-05
+feature: rid-langflow-single-entry
+prd_ref: RF-003
+ui_library: none (raw React 18 + inline styles + plain CSS)
+styling: inline styles + plain CSS
+language: pt-BR
+accessibility: WCAG AA
+
+# NOTA DE TOPOLOGIA:
+# Esta página é servida pelo servidor da plataforma RID (Django ou proxy), NÃO pelo
+# Langflow. Deve ser um componente React leve integrado na aplicação RID, sem depender
+# de qualquer asset do Langflow. Pode ser uma template Django ou um componente React
+# mínimo montado pelo shell.
+
+ascii_prototype:
+  desktop: |
+    ┌────────────────────────────────────────────────────────────────┐
+    │  [Logo RID]                          [Nav da plataforma]  [👤] │
+    ├────────────────────────────────────────────────────────────────┤
+    │                                                                │
+    │                                                                │
+    │              ┌──────────────────────────────────┐             │
+    │              │                                  │             │
+    │              │        [⚠ ícone de erro]         │             │
+    │              │                                  │             │
+    │              │   Editor de fluxos indisponível  │  ← h1       │
+    │              │                                  │             │
+    │              │  O editor de fluxos está         │             │
+    │              │  temporariamente indisponível.   │  ← p body   │
+    │              │  A equipa foi notificada.         │             │
+    │              │                                  │             │
+    │              │  [    Tentar novamente    ]       │  ← btn CTA  │
+    │              │                                  │             │
+    │              │     Voltar ao painel  →           │  ← link     │
+    │              │                                  │             │
+    │              └──────────────────────────────────┘             │
+    │                                                                │
+    │                                                                │
+    └────────────────────────────────────────────────────────────────┘
+
+  mobile: |
+    ┌────────────────────────────┐
+    │  [Logo RID]          [☰]  │
+    ├────────────────────────────┤
+    │                            │
+    │      [⚠ ícone de erro]    │
+    │                            │
+    │  Editor de fluxos          │
+    │  indisponível              │  ← h1
+    │                            │
+    │  O editor de fluxos está   │
+    │  temporariamente           │  ← p body
+    │  indisponível.             │
+    │  A equipa foi notificada.  │
+    │                            │
+    │  [ Tentar novamente ]      │  ← btn full-width
+    │                            │
+    │  Voltar ao painel →        │  ← link centrado
+    │                            │
+    └────────────────────────────┘
+
+layout: centered-card
+max_content_width: 480px
+
+components:
+  - id: platform-header
+    type: header
+    description: Header padrão da plataforma RID com logo, nav e perfil do utilizador
+    note: Reutilizar o header existente da plataforma — não criar um header específico para esta página
+
+  - id: error-card
+    type: container
+    role: main
+    aria_label: Erro de indisponibilidade do editor de fluxos
+    padding: 48px
+    border_radius: 8px
+    background: white (light mode) / surface-variant (se dark mode disponível)
+    shadow: medium
+    max_width: 480px
+    children:
+      - id: error-icon
+        type: icon
+        name: warning-triangle ou equivalente
+        size: 48px
+        color: warning (#ca8a04 ou token de warning da plataforma)
+        aria_hidden: true
+        note: Se não houver ícone de warning, usar emoji ⚠ com aria-hidden="true"
+
+      - id: error-title
+        type: heading
+        level: h1
+        text: "Editor de fluxos indisponível"
+        font_size: 20px (desktop) / 18px (mobile)
+        font_weight: 600
+        color: foreground (token da plataforma)
+        margin_top: 16px
+
+      - id: error-body
+        type: paragraph
+        text: "O editor de fluxos está temporariamente indisponível. A equipa foi notificada."
+        font_size: 14px
+        color: muted-foreground
+        margin_top: 8px
+        line_height: 1.5
+
+      - id: retry-button
+        type: button
+        variant: primary
+        text: "Tentar novamente"
+        width: full (mobile) / auto (desktop, min 160px)
+        height: 44px (touch target)
+        margin_top: 24px
+        states:
+          default:
+            text: "Tentar novamente"
+            icon: none
+          loading:
+            text: "A verificar..."
+            icon: spinner (left)
+            disabled: true
+          error_again:
+            text: "Tentar novamente"
+            icon: none
+            note: Volta ao estado default após retry falhar
+        aria_label: "Tentar aceder novamente ao editor de fluxos"
+        on_click: recarregar o editor (GET /flows/) — não recarregar a própria página de erro
+
+      - id: dashboard-link
+        type: link
+        text: "Voltar ao painel"
+        href: /dashboard (ou rota raiz da plataforma RID)
+        variant: text/subtle
+        margin_top: 16px
+        display: block
+        text_align: center (mobile) / left (desktop)
+        aria_label: "Voltar ao painel principal da plataforma"
+
+states:
+  default:
+    description: Langflow indisponível — primeira apresentação
+    components_visible: [platform-header, error-card]
+    retry_button_state: default
+
+  retry_loading:
+    description: Utilizador clicou "Tentar novamente" — a verificar
+    trigger: click em retry-button
+    components_visible: [platform-header, error-card]
+    retry_button_state: loading
+    duration: até resposta do servidor (máximo 10s timeout)
+    transitions:
+      success: navega para /flows/ (Langflow recuperou)
+      failure: volta ao estado default com retry_button em estado error_again
+
+  retry_success:
+    description: Langflow recuperou após retry
+    trigger: servidor responde com 200 após retry
+    transition: navega para /flows/ normalmente
+
+responsive:
+  mobile:
+    breakpoint: "< 768px"
+    layout: full-width, sem card shadow
+    padding: 24px 16px
+    error_icon_size: 40px
+    retry_button: full-width
+    dashboard_link: centrado
+
+  desktop:
+    breakpoint: ">= 768px"
+    layout: card centrado (max-width 480px)
+    padding: 48px
+    error_icon_size: 48px
+    retry_button: auto width, alinhado à esquerda
+
+accessibility:
+  wcag_level: AA
+  keyboard:
+    - Tab: foca retry-button → dashboard-link (nessa ordem)
+    - Enter/Space: activa o elemento em foco
+    - Shift+Tab: foco reverso
+  screen_reader:
+    - h1 é o primeiro elemento de conteúdo após o header da plataforma
+    - role="alert" no error-card para anunciar o erro quando renderizado dinamicamente
+    - aria-hidden="true" no error-icon (decorativo)
+    - aria-label explícito em retry-button e dashboard-link
+  focus:
+    - retry-button recebe foco automático quando a página de erro é apresentada (se renderização dinâmica)
+    - Indicador de foco visível (outline 2px solid) em todos os elementos interactivos
+
+notes:
+  - Esta página NÃO deve carregar o bundle JS/CSS do Langflow — deve ser completamente independente
+  - Pode ser implementada como template Django (HTML puro) ou como componente React mínimo
+  - O texto "A equipa foi notificada" pressupõe que há alertas de observabilidade configurados; ajustar se não for o caso
+  - A acção "Tentar novamente" deve fazer GET /flows/ (ou o path correcto do editor) — não window.location.reload()
+  - Considerar mostrar o timestamp da última tentativa se o utilizador tentar múltiplas vezes

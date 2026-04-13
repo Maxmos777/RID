@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-04-06T00:00:00Z",
+  "features": [
+    {
+      "id": "rid-langflow-single-entry",
+      "name": "Entrada única autenticada para o editor de fluxos",
+      "status": "implementation_ready",
+      "gates_completed": [0, 1, 1.5, 2, 3, 6, 7, 8, 9],
+      "gates_skipped": [4, 5],
+      "skip_reason": "Auth Check Endpoint sem contrato de API novo; sem entidades novas",
+      "docs_path": "rid-langflow-single-entry/",
+      "roadmap": "rid-langflow-single-entry/gate-9-delivery-roadmap.json",
+      "start_date": "2026-04-06",
+      "end_date": "2026-04-15",
+      "team_size": 1,
+      "total_ai_hours": 26,
+      "critical_path_days": 3.75
+    }
+  ]
+}

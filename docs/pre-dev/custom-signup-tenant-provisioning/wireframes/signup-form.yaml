@@ -1,0 +1,261 @@
+---
+screen: Cadastro empresarial — Formulario de signup com criacao de tenant
+route: /accounts/signup/
+gate: 1
+date: 2026-04-06
+feature: custom-signup-tenant-provisioning
+ux_criteria_ref: docs/pre-dev/custom-signup-tenant-provisioning/ux-criteria.md
+ui_library: none (Django template, server-rendered)
+styling: Django allauth elements + CSS custom
+language: pt-BR
+accessibility: WCAG AA
+
+ascii_prototype:
+
+  default_state:
+    description: Formulario de cadastro empresarial — estado inicial
+    layout: |
+      ┌──────────────────────────────────────────────────────────────┐
+      │                        [Logo RID]                            │
+      ├──────────────────────────────────────────────────────────────┤
+      │                                                              │
+      │           Crie a conta da sua empresa                        │  h1
+      │                                                              │
+      │   Ja tem uma conta? Entre aqui.                              │  link /login/
+      │                                                              │
+      │   ┌────────────────────────────────────────────────────┐     │
+      │   │                                                    │     │
+      │   │  Nome da Empresa *                                 │     │
+      │   │  ┌──────────────────────────────────────────────┐  │     │
+      │   │  │                                              │  │     │
+      │   │  └──────────────────────────────────────────────┘  │     │
+      │   │  Sera o identificador da sua empresa na            │     │
+      │   │  plataforma.                                       │     │
+      │   │                                                    │     │
+      │   │  Usuario *                                          │     │
+      │   │  ┌──────────────────────────────────────────────┐  │     │
+      │   │  │                                              │  │     │
+      │   │  └──────────────────────────────────────────────┘  │     │
+      │   │  Sera seu login. Formato: usuario@nome_da_empresa  │     │
+      │   │                                                    │     │
+      │   │  Email *                                           │     │
+      │   │  ┌──────────────────────────────────────────────┐  │     │
+      │   │  │                                              │  │     │
+      │   │  └──────────────────────────────────────────────┘  │     │
+      │   │  Email de contato. Usado para notificacoes e       │     │
+      │   │  recuperacao de senha.                             │     │
+      │   │                                                    │     │
+      │   │  Telefone *                                        │     │
+      │   │  ┌──────────────────────────────────────────────┐  │     │
+      │   │  │                                              │  │     │
+      │   │  └──────────────────────────────────────────────┘  │     │
+      │   │  Com DDD. Ex: (11) 99999-9999                      │     │
+      │   │                                                    │     │
+      │   │  Senha *                                           │     │
+      │   │  ┌──────────────────────────────────────────────┐  │     │
+      │   │  │                                              │  │     │
+      │   │  └──────────────────────────────────────────────┘  │     │
+      │   │  Minimo 8 caracteres.                              │     │
+      │   │                                                    │     │
+      │   │  Confirmar Senha *                                 │     │
+      │   │  ┌──────────────────────────────────────────────┐  │     │
+      │   │  │                                              │  │     │
+      │   │  └──────────────────────────────────────────────┘  │     │
+      │   │                                                    │     │
+      │   │  ┌──────────────────────────────────────────────┐  │     │
+      │   │  │        Criar conta da empresa                │  │     │  btn CTA
+      │   │  └──────────────────────────────────────────────┘  │     │
+      │   │                                                    │     │
+      │   └────────────────────────────────────────────────────┘     │
+      │                                                              │
+      └──────────────────────────────────────────────────────────────┘
+
+  inline_validation_error_state:
+    description: Campo com erro de validacao inline (exemplo username ja cadastrado)
+    layout: |
+      │  Usuario *                                         │
+      │  ┌──────────────────────────────────────────────┐  │
+      │  │ carlos@acme                                  │  │  borda vermelha
+      │  └──────────────────────────────────────────────┘  │
+      │  Este usuario ja esta cadastrado. Deseja entrar?   │  texto vermelho
+      │     link "entrar" para /accounts/login/            │
+
+  inline_validation_checking_state:
+    description: Verificacao inline em progresso (blur disparou fetch)
+    layout: |
+      │  Nome da Empresa *                                 │
+      │  ┌──────────────────────────────────────────────┐  │
+      │  │ Acme Consultoria                    [...]    │  │  spinner discreto
+      │  └──────────────────────────────────────────────┘  │
+      │  Sera o identificador da sua empresa na            │
+      │  plataforma.                                       │
+
+  submitting_state:
+    description: Formulario durante submit (POST em progresso)
+    layout: |
+      │   │  ┌──────────────────────────────────────────────┐  │     │
+      │   │  │    [...]  Criando...                         │  │     │  btn desabilitado
+      │   │  └──────────────────────────────────────────────┘  │     │
+    note: Todos os campos desabilitados durante submit.
+
+  mobile_layout:
+    description: Layout responsivo em viewport < 768px
+    layout: |
+      ┌────────────────────────────┐
+      │       [Logo RID]           │
+      ├────────────────────────────┤
+      │                            │
+      │ Crie a conta da sua        │
+      │ empresa                    │
+      │                            │
+      │ Ja tem conta? Entre aqui.  │
+      │                            │
+      │ Nome da Empresa *          │
+      │ ┌────────────────────────┐ │
+      │ │                        │ │
+      │ └────────────────────────┘ │
+      │ Sera o identificador da    │
+      │ sua empresa na plataforma. │
+      │                            │
+      │ Usuario *                  │
+      │ ┌────────────────────────┐ │
+      │ │                        │ │
+      │ └────────────────────────┘ │
+      │ Formato: user@empresa      │
+      │                            │
+      │ Email *                    │
+      │ ┌────────────────────────┐ │
+      │ │                        │ │
+      │ └────────────────────────┘ │
+      │                            │
+      │ Telefone *                 │
+      │ ┌────────────────────────┐ │
+      │ │                        │ │
+      │ └────────────────────────┘ │
+      │                            │
+      │ Senha *                    │
+      │ ┌────────────────────────┐ │
+      │ │                        │ │
+      │ └────────────────────────┘ │
+      │                            │
+      │ Confirmar Senha *          │
+      │ ┌────────────────────────┐ │
+      │ │                        │ │
+      │ └────────────────────────┘ │
+      │                            │
+      │ ┌────────────────────────┐ │
+      │ │ Criar conta da empresa │ │
+      │ └────────────────────────┘ │
+      │                            │
+      └────────────────────────────┘
+    note: >
+      Padding lateral 16px. Campos 100% largura.
+      Inputs altura 44px (touch target).
+      Font-size inputs 16px (previne zoom iOS).
+
+components:
+
+  heading:
+    type: h1
+    text: "Crie a conta da sua empresa"
+
+  login_link:
+    type: paragraph
+    text: "Ja tem uma conta? Entre aqui."
+    link_target: /accounts/login/
+
+  form:
+    type: form
+    method: POST
+    action: /accounts/signup/
+    csrf: required
+    children:
+
+      - field: tenant_name
+        type: text
+        label: "Nome da Empresa"
+        required: true
+        minlength: 3
+        maxlength: 255
+        help_text: "Sera o identificador da sua empresa na plataforma."
+        autocomplete: organization
+        inline_validation:
+          trigger: blur
+          endpoint: "/accounts/check-company/"
+          param: "name"
+
+      - field: username
+        type: text
+        label: "Usuario"
+        required: true
+        help_text: "Sera seu login. Formato: usuario@nome_da_empresa"
+        autocomplete: username
+        pattern: "^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+$"
+        pattern_error: "Use o formato usuario@nome_da_empresa (ex: carlos@acme)"
+        inline_validation:
+          trigger: blur
+          endpoint: "/accounts/check-username/"
+          param: "username"
+
+      - field: email
+        type: email
+        label: "Email"
+        required: true
+        help_text: "Email de contato da empresa. Usado para notificacoes e recuperacao de senha."
+        autocomplete: email
+        inline_validation:
+          trigger: blur
+          endpoint: "/accounts/check-email/"
+          param: "email"
+
+      - field: phone_number
+        type: tel
+        label: "Telefone"
+        required: true
+        help_text: "Com DDD. Ex: (11) 99999-9999"
+        autocomplete: tel
+        inputmode: numeric
+        mask:
+          pattern: "(XX) XXXXX-XXXX"
+          fallback_pattern: "(XX) XXXX-XXXX"
+          strip_to: digits_only
+          js_library: vanilla
+
+      - field: password1
+        type: password
+        label: "Senha"
+        required: true
+        minlength: 8
+        help_text: "Minimo 8 caracteres."
+        autocomplete: new-password
+
+      - field: password2
+        type: password
+        label: "Confirmar Senha"
+        required: true
+        autocomplete: new-password
+
+  submit_button:
+    type: button
+    subtype: submit
+    label: "Criar conta da empresa"
+    loading_label: "Criando..."
+
+responsive:
+  breakpoints:
+    mobile:
+      max_width: 767px
+      form_width: "100% - 32px"
+      input_height: 44px
+      font_size_input: 16px
+    desktop:
+      min_width: 1024px
+      form_width: 480px
+      centered: true
+
+notes:
+  - Server-rendered Django template, nao React/SPA.
+  - Validacao inline via fetch e progressive enhancement — funciona sem JS.
+  - Mascara de telefone e JS puro (sem dependencia externa).
+  - Endpoint de inline validation deve ser rate-limited.
+  - Login via username no formato usuario@nome_da_empresa — allauth v65+ com ACCOUNT_LOGIN_METHODS={"email", "username"}.

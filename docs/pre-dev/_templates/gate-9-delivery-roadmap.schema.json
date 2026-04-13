@@ -1,0 +1,322 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Delivery Roadmap",
+  "description": "Gate 9 — machine-readable delivery roadmap for programmatic consumption by PMO dashboards, CI pipelines, and reporting tools.",
+  "type": "object",
+  "required": [
+    "version",
+    "gate",
+    "feature",
+    "generatedAt",
+    "dates",
+    "velocity",
+    "deliveryCadence",
+    "tasks",
+    "milestones",
+    "criticalPath",
+    "risks",
+    "contingencyBuffer",
+    "confidenceScore"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version following semver. Currently 1.0.0.",
+      "example": "1.0.0"
+    },
+    "gate": {
+      "type": "integer",
+      "description": "Gate number. Always 9 for delivery roadmaps.",
+      "example": 9
+    },
+    "feature": {
+      "type": "string",
+      "description": "Feature slug matching the directory name under docs/pre-dev/. Used as the unique identifier across all PMO artifacts.",
+      "example": "rid-langflow-single-entry"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 datetime when this roadmap was generated. Used for cache invalidation and audit trails.",
+      "example": "2026-04-06T00:00:00Z"
+    },
+    "dates": {
+      "type": "object",
+      "description": "Project timeline boundaries.",
+      "required": ["startDate", "endDate", "totalDuration"],
+      "properties": {
+        "startDate": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO 8601 date when implementation starts (first task begins).",
+          "example": "2026-04-06"
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO 8601 date when all tasks are expected to be complete (including contingency buffer).",
+          "example": "2026-04-15"
+        },
+        "mvpEndDate": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "ISO 8601 date for MVP subset completion, if the feature has a distinct MVP phase. Null if no MVP split.",
+          "example": null
+        },
+        "totalDuration": {
+          "type": "string",
+          "description": "Human-readable total project duration in working days (includes contingency buffer).",
+          "example": "6.5 working days"
+        }
+      }
+    },
+    "velocity": {
+      "type": "object",
+      "description": "Team velocity parameters used to calculate calendar estimates from AI estimates.",
+      "required": ["teamSize", "utilizationRate", "humanValidationMultiplier", "multiplierSource"],
+      "properties": {
+        "teamSize": {
+          "type": "integer",
+          "description": "Number of developers actively working on this feature.",
+          "example": 1
+        },
+        "utilizationRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of working hours actually available for this feature (0.0–1.0). Accounts for meetings, context switching, etc.",
+          "example": 0.9
+        },
+        "humanValidationMultiplier": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Multiplier applied to AI estimates to account for human review, testing, iteration, and unexpected issues. Typical range: 1.3–2.0.",
+          "example": 1.5
+        },
+        "multiplierSource": {
+          "type": "string",
+          "description": "Source of the humanValidationMultiplier. 'default' means team default; 'historical' means derived from past feature data.",
+          "enum": ["default", "historical", "custom"],
+          "example": "default"
+        }
+      }
+    },
+    "deliveryCadence": {
+      "type": "object",
+      "description": "How delivery is structured: continuous (ship when done) or sprint-based.",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Delivery model. 'continuous' = ship each task as it completes. 'sprint' = deliver at sprint boundaries.",
+          "enum": ["continuous", "sprint"],
+          "example": "continuous"
+        },
+        "periodDuration": {
+          "type": ["string", "null"],
+          "description": "Duration of each sprint period (e.g., '2 weeks'). Null if type is 'continuous'.",
+          "example": null
+        },
+        "periodStartDate": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Start date of the first sprint period. Null if type is 'continuous'.",
+          "example": null
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "description": "Ordered list of implementation tasks. Each task corresponds to a T-NNN entry in gate-7-tasks.md.",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "aiEstimate", "adjusted", "calendar", "days", "dependencies", "assignee", "status", "onCriticalPath"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task identifier matching gate-7 nomenclature (T-NNN).",
+            "example": "T-001"
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of the task deliverable. Should match the task title in gate-7-tasks.md.",
+            "example": "Traefik container + docker-compose integration"
+          },
+          "aiEstimate": {
+            "type": "string",
+            "description": "Raw AI-generated estimate before applying humanValidationMultiplier (e.g., '4h').",
+            "example": "4h"
+          },
+          "adjusted": {
+            "type": "string",
+            "description": "Estimate after applying humanValidationMultiplier (aiEstimate × multiplier). Format: '6.0h'.",
+            "example": "6.0h"
+          },
+          "calendar": {
+            "type": "string",
+            "description": "Wall-clock hours accounting for utilizationRate (adjusted ÷ utilizationRate). Format: '6.67h'.",
+            "example": "6.67h"
+          },
+          "days": {
+            "type": "string",
+            "description": "Working days equivalent of calendar hours (calendar ÷ 9h/day). Format: '0.83d'.",
+            "example": "0.83d"
+          },
+          "dependencies": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of task IDs that must complete before this task can start. Empty array if no dependencies.",
+            "example": ["T-002"]
+          },
+          "assignee": {
+            "type": "string",
+            "description": "Role or team responsible for this task. Values: Backend | Frontend | DevOps | QA | Fullstack.",
+            "example": "Backend"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current task status. 'ready' = can start immediately. 'blocked' = waiting for dependencies.",
+            "enum": ["ready", "blocked", "in_progress", "done"],
+            "example": "ready"
+          },
+          "onCriticalPath": {
+            "type": "boolean",
+            "description": "Whether this task is on the critical path (its delay directly delays the project end date).",
+            "example": false
+          }
+        }
+      }
+    },
+    "milestones": {
+      "type": "array",
+      "description": "Project milestones grouping related tasks. Each milestone represents a meaningful delivery checkpoint.",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "startDate", "targetDate", "taskIds", "deliverable", "spillOvers"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Milestone name. Convention: 'Milestone N — {short description}'.",
+            "example": "Milestone 1 — Infraestrutura pronta"
+          },
+          "type": {
+            "type": "string",
+            "description": "Milestone type. Currently always 'milestone'.",
+            "enum": ["milestone"],
+            "example": "milestone"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when work on this milestone's tasks begins.",
+            "example": "2026-04-06"
+          },
+          "targetDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date by which all tasks in this milestone should be complete.",
+            "example": "2026-04-07"
+          },
+          "taskIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of task IDs (T-NNN) included in this milestone.",
+            "example": ["T-002", "T-001"]
+          },
+          "deliverable": {
+            "type": "string",
+            "description": "Plain-language description of what is delivered when this milestone is complete. Suitable for stakeholder communication.",
+            "example": "Traefik em execução, Django proxy-ready, porta 7861 fechada"
+          },
+          "spillOvers": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Task IDs that were planned for this milestone but spilled over to the next. Empty array at planning time.",
+            "example": []
+          }
+        }
+      }
+    },
+    "criticalPath": {
+      "type": "object",
+      "description": "Critical path analysis: the sequence of tasks whose total duration determines the minimum project duration.",
+      "required": ["taskIds", "totalDuration", "minimumProjectDuration"],
+      "properties": {
+        "taskIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ordered list of task IDs forming the critical path (longest dependency chain).",
+          "example": ["T-002", "T-003", "T-005", "T-006"]
+        },
+        "totalDuration": {
+          "type": "string",
+          "description": "Sum of working days for tasks on the critical path (sequential execution).",
+          "example": "3.75 working days (dependency chain)"
+        },
+        "minimumProjectDuration": {
+          "type": "string",
+          "description": "Minimum calendar duration to complete the project with the current team size (critical path + contingency buffer).",
+          "example": "5.41 working days (with 1 developer, sequential)"
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "description": "Risk register for this feature. Each entry covers one or more tasks.",
+      "items": {
+        "type": "object",
+        "required": ["taskIds", "level", "impact", "mitigation"],
+        "properties": {
+          "taskIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Task IDs affected by this risk.",
+            "example": ["T-001"]
+          },
+          "level": {
+            "type": "string",
+            "description": "Risk level combining probability and impact. Values: low | medium | high | critical.",
+            "enum": ["low", "medium", "high", "critical"],
+            "example": "medium"
+          },
+          "impact": {
+            "type": "string",
+            "description": "Description of what happens if this risk materialises. Should be specific and concrete.",
+            "example": "Má configuração quebra resolução de tenant"
+          },
+          "mitigation": {
+            "type": "string",
+            "description": "Concrete mitigation action(s) to reduce likelihood or impact.",
+            "example": "Subtask fornece YAML exacto; testar com docker-compose up localmente antes de prosseguir"
+          }
+        }
+      }
+    },
+    "contingencyBuffer": {
+      "type": "object",
+      "description": "Buffer added to the total estimate to account for unplanned work and risk materialisation.",
+      "required": ["percentage", "days"],
+      "properties": {
+        "percentage": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Buffer as a percentage of total adjusted estimate. Typical values: 10–25%.",
+          "example": 15
+        },
+        "days": {
+          "type": "number",
+          "description": "Buffer converted to working days (total adjusted days × percentage ÷ 100).",
+          "example": 1
+        }
+      }
+    },
+    "confidenceScore": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Overall confidence in the roadmap estimates (0–100). Derived from task confidence levels, risk profile, and team familiarity with the domain. 80+ = high confidence; 60–79 = medium; <60 = low.",
+      "example": 89
+    }
+  }
+}

@@ -1,0 +1,148 @@
+---
+screen: Auth redirect flow — Redirect para login e retorno ao editor
+route: /flows/* → /login/?next=<url> → /flows/<original-path>
+gate: 1
+date: 2026-04-05
+feature: rid-langflow-single-entry
+prd_ref: RF-001, RF-002
+ui_library: none (raw React 18 + inline styles + plain CSS)
+styling: inline styles + plain CSS
+language: pt-BR
+accessibility: WCAG AA
+
+# NOTA DE TOPOLOGIA:
+# Este fluxo não envolve um novo ecrã RID — reutiliza a página de login existente da
+# plataforma. O único componente novo possível é um estado transitório mínimo antes do
+# redirect HTTP, caso a equipa decida não fazer redirect 302 imediato (ver HIGH issue
+# no PRD Issues Log).
+
+ascii_prototype:
+
+  step_1_transitional_state:
+    description: Estado transitório antes do redirect (opcional — ver open question)
+    note: |
+      Se o gate fizer redirect HTTP 302 directo, este estado não existe — o browser
+      segue o redirect sem renderizar nada. Apenas relevante se a equipa optar por
+      uma micro-página de "a redirecionar" para evitar flash de branco.
+    layout: |
+      ┌────────────────────────────────────────────────────────────────┐
+      │  [Logo RID]                                                    │
+      ├────────────────────────────────────────────────────────────────┤
+      │                                                                │
+      │                    [⟳ spinner]                                 │
+      │               A redirecionar para login...                     │
+      │                                                                │
+      └────────────────────────────────────────────────────────────────┘
+
+  step_2_login_page:
+    description: Página de login existente da plataforma RID (não modificada por este feature)
+    note: |
+      A página de login é pré-existente. Este feature apenas adiciona o parâmetro
+      `?next=<url-encoded>` na URL de redirect. A página de login deve preservar
+      este parâmetro e passá-lo para o servidor após autenticação bem sucedida.
+    layout: |
+      ┌────────────────────────────────────────────────────────────────┐
+      │  [Logo RID]                                                    │
+      ├────────────────────────────────────────────────────────────────┤
+      │                                                                │
+      │              ┌──────────────────────────────────┐             │
+      │              │                                  │             │
+      │              │   Entrar na plataforma RID        │  ← h1       │
+      │              │                                  │             │
+      │              │   Email                           │             │
+      │              │   [________________________]      │             │
+      │              │                                  │             │
+      │              │   Palavra-passe                   │             │
+      │              │   [________________________]      │             │
+      │              │                                  │             │
+      │              │   [        Entrar        ]        │  ← btn CTA  │
+      │              │                                  │             │
+      │              └──────────────────────────────────┘             │
+      │                                                                │
+      └────────────────────────────────────────────────────────────────┘
+      URL: /login/?next=%2Fflows%2F<flow-id>
+      (parâmetro next visível na barra de endereços — apenas path, sem tokens)
+
+  step_3_post_login_return:
+    description: Após autenticação bem sucedida — retorno ao destino original
+    note: |
+      Não há ecrã intermediário. O servidor de autenticação lê o parâmetro `next`,
+      valida que é um path interno (não URL externa — prevenir open redirect), e
+      faz redirect para o destino original. O utilizador aterra directamente no editor.
+    transition: redirect 302 para /flows/<original-path>
+
+components:
+
+  transitional_state:
+    decision: redirect HTTP 302 directo — sem página intermédia
+    note: >
+      O gate responde com 302 imediatamente ao detectar sessão ausente.
+      O browser segue o redirect sem renderizar conteúdo intermédio.
+      Flash de branco eventual (<100ms) é aceitável e imperceptível na prática.
+
+  login_page:
+    note: Página existente — sem modificações visuais. Apenas o parâmetro ?next é novo.
+    new_requirement: >
+      A página de login DEVE preservar o parâmetro `next` durante ciclos de erro
+      (credenciais inválidas). O parâmetro não deve ser perdido se o utilizador
+      errar a senha e tentar novamente.
+
+states:
+  unauthenticated_access:
+    description: Utilizador sem sessão acede a /flows/<path>
+    trigger: GET /flows/* sem cookie de sessão válido
+    gate_response: HTTP 302 para /login/?next=%2Fflows%2F<encoded-path>
+    user_experience: browser segue redirect imediatamente (ou micro-estado de loading)
+
+  on_login_page:
+    description: Utilizador na página de login com parâmetro next
+    url_pattern: /login/?next=%2Fflows%2F<encoded-path>
+    user_action: inserir credenciais e submeter
+    on_success: servidor autentica → redirect 302 para o valor de `next`
+    on_failure: página de login recarrega com mensagem de erro; parâmetro `next` preservado
+
+  post_login_return:
+    description: Utilizador autenticado retorna ao destino original
+    trigger: redirect após autenticação bem sucedida
+    destination: /flows/<original-path>
+    gate_behavior: valida sessão (agora válida) → regista auditoria → encaminha para Langflow
+    user_experience: editor carrega com o conteúdo destino (deep link ou raiz do editor)
+
+security:
+  open_redirect_prevention:
+    description: O parâmetro `next` DEVE ser validado antes do redirect pós-login
+    rule: aceitar apenas paths internos (começam com /) — rejeitar URLs absolutas externas
+    reason: prevenir open redirect attacks (OWASP)
+    example_safe: next=/flows/abc123
+    example_unsafe: next=https://evil.com (deve ser rejeitado → redirect para / em vez disso)
+
+  next_param_encoding:
+    description: O path de destino deve ser URL-encoded no parâmetro next
+    example: /flows/flow?id=123 → next=%2Fflows%2Fflow%3Fid%3D123
+    note: Evitar double-encoding; validar no servidor antes de usar
+
+  session_fixation:
+    description: Após autenticação, criar nova sessão (não reutilizar sessão anónima)
+    standard: comportamento padrão do Django allauth — verificar que está activo
+
+accessibility:
+  transitional_state:
+    - aria-live="polite" no texto de loading para anunciar o estado
+    - Evitar conteúdo que pisca ou anima de forma intensa (prefers-reduced-motion)
+  login_page:
+    - Responsabilidade da página de login existente — não regressão deste feature
+    - Verificar que o parâmetro `next` não aparece em campos visíveis ou labels
+
+responsive:
+  note: >
+    O estado transitório (se implementado) deve ser responsivo.
+    A página de login existente já deve ser responsiva — não é modificada por este feature.
+
+notes:
+  - O comportamento exacto do estado transitório (redirect 302 imediato vs micro-página)
+    é uma decisão de implementação pendente (HIGH issue no PRD Issues Log)
+  - A preservação do parâmetro `next` para URLs com fragmentos hash (#) pode ser
+    problemática — o hash não é enviado ao servidor. O TRD deve endereçar este caso
+    se o router do Langflow usar hash-based routing.
+  - Em caso de deep link para fluxo específico, o `next` contém o path completo incluindo
+    o ID do fluxo — garantir que o servidor não trunca URLs longas

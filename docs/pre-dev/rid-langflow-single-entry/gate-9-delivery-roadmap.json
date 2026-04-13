@@ -1,0 +1,165 @@
+{
+  "version": "1.0.0",
+  "gate": 9,
+  "feature": "rid-langflow-single-entry",
+  "generatedAt": "2026-04-06T00:00:00Z",
+  "dates": {
+    "startDate": "2026-04-06",
+    "endDate": "2026-04-15",
+    "mvpEndDate": null,
+    "totalDuration": "6.5 working days"
+  },
+  "velocity": {
+    "teamSize": 1,
+    "utilizationRate": 0.9,
+    "humanValidationMultiplier": 1.5,
+    "multiplierSource": "default"
+  },
+  "deliveryCadence": {
+    "type": "continuous",
+    "periodDuration": null,
+    "periodStartDate": null
+  },
+  "tasks": [
+    {
+      "id": "T-001",
+      "description": "Traefik container + docker-compose integration",
+      "aiEstimate": "4h",
+      "adjusted": "6.0h",
+      "calendar": "6.67h",
+      "days": "0.83d",
+      "dependencies": [],
+      "assignee": "DevOps",
+      "status": "ready",
+      "onCriticalPath": false
+    },
+    {
+      "id": "T-002",
+      "description": "Django proxy header settings",
+      "aiEstimate": "2h",
+      "adjusted": "3.0h",
+      "calendar": "3.33h",
+      "days": "0.42d",
+      "dependencies": [],
+      "assignee": "Backend",
+      "status": "ready",
+      "onCriticalPath": true
+    },
+    {
+      "id": "T-003",
+      "description": "Auth Check Endpoint /internal/auth-check/",
+      "aiEstimate": "5h",
+      "adjusted": "7.5h",
+      "calendar": "8.33h",
+      "days": "1.04d",
+      "dependencies": ["T-002"],
+      "assignee": "Backend",
+      "status": "blocked",
+      "onCriticalPath": true
+    },
+    {
+      "id": "T-004",
+      "description": "Error Page Template + Django view",
+      "aiEstimate": "4h",
+      "adjusted": "6.0h",
+      "calendar": "6.67h",
+      "days": "0.83d",
+      "dependencies": ["T-001"],
+      "assignee": "Backend",
+      "status": "blocked",
+      "onCriticalPath": false
+    },
+    {
+      "id": "T-005",
+      "description": "Session Expiry Overlay + heartbeat hook (React)",
+      "aiEstimate": "5h",
+      "adjusted": "7.5h",
+      "calendar": "8.33h",
+      "days": "1.04d",
+      "dependencies": ["T-003"],
+      "assignee": "Frontend",
+      "status": "blocked",
+      "onCriticalPath": true
+    },
+    {
+      "id": "T-006",
+      "description": "Integration + E2E tests",
+      "aiEstimate": "6h",
+      "adjusted": "9.0h",
+      "calendar": "10.0h",
+      "days": "1.25d",
+      "dependencies": ["T-001", "T-003", "T-004", "T-005"],
+      "assignee": "QA",
+      "status": "blocked",
+      "onCriticalPath": true
+    }
+  ],
+  "milestones": [
+    {
+      "name": "Milestone 1 — Infraestrutura pronta",
+      "type": "milestone",
+      "startDate": "2026-04-06",
+      "targetDate": "2026-04-07",
+      "taskIds": ["T-002", "T-001"],
+      "deliverable": "Traefik em execução, Django proxy-ready, porta 7861 fechada",
+      "spillOvers": []
+    },
+    {
+      "name": "Milestone 2 — Auth gate activo",
+      "type": "milestone",
+      "startDate": "2026-04-08",
+      "targetDate": "2026-04-09",
+      "taskIds": ["T-003", "T-004"],
+      "deliverable": "Endpoint /internal/auth-check/ live, página de erro funcionando, acesso não autenticado redireccionado",
+      "spillOvers": []
+    },
+    {
+      "name": "Milestone 3 — Experiência completa do utilizador",
+      "type": "milestone",
+      "startDate": "2026-04-10",
+      "targetDate": "2026-04-10",
+      "taskIds": ["T-005"],
+      "deliverable": "Overlay de sessão expirada activo no browser, heartbeat a cada 2 min",
+      "spillOvers": []
+    },
+    {
+      "name": "Milestone 4 — Validado e pronto para produção",
+      "type": "milestone",
+      "startDate": "2026-04-13",
+      "targetDate": "2026-04-15",
+      "taskIds": ["T-006"],
+      "deliverable": "Todos os testes de integração e E2E a passar, feature confirmado production-ready",
+      "spillOvers": []
+    }
+  ],
+  "criticalPath": {
+    "taskIds": ["T-002", "T-003", "T-005", "T-006"],
+    "totalDuration": "3.75 working days (dependency chain)",
+    "minimumProjectDuration": "5.41 working days (with 1 developer, sequential)"
+  },
+  "risks": [
+    {
+      "taskIds": ["T-001"],
+      "level": "medium",
+      "impact": "Labels Traefik para django-tenants são novidade neste codebase; má configuração quebra resolução de tenant",
+      "mitigation": "ST-001-01 fornece YAML exacto; testar com docker-compose up localmente antes de prosseguir"
+    },
+    {
+      "taskIds": ["T-006"],
+      "level": "high",
+      "impact": "Testes E2E requerem stack docker-compose completa; CI pode não suportar Docker-in-Docker",
+      "mitigation": "Separar testes unitários dos testes de integração docker-compose; CI faz gate nos unitários, integração corre manualmente"
+    },
+    {
+      "taskIds": ["T-001", "T-002"],
+      "level": "medium",
+      "impact": "HeaderFirstTenantMiddleware pode não ler X-Forwarded-Host correctamente através do Traefik",
+      "mitigation": "Testar com curl imediatamente após T-001 + T-002 completos antes de avançar"
+    }
+  ],
+  "contingencyBuffer": {
+    "percentage": 15,
+    "days": 1
+  },
+  "confidenceScore": 89
+}

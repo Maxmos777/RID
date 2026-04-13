@@ -14,6 +14,7 @@ ADR-009: auth Langflow via API Key (x-api-key), não via password superuser
 """
 from __future__ import annotations
 
+import logging
 from typing import Annotated, Any
 
 from asgiref.sync import sync_to_async
@@ -23,12 +24,21 @@ from pydantic import BaseModel, Field
 from api.deps import AuthenticatedUser
 from api.services.langflow_client import get_tenant_service_credentials
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
 class AutoLoginResponse(BaseModel):
+    """
+    Credenciais de autenticação Langflow para o cliente.
+
+    SECURITY: api_key NÃO é retornado no corpo da resposta.
+    A chave é armazenada no Django session (HTTP-only cookie) ou retornada
+    apenas em header HTTP-only. O cliente JavaScript acede à chave via
+    backend-controlled session, não via localStorage.
+    """
     access_token: str
-    api_key: str
     workspace_id: str = Field(
         ...,
         description="UUID do project Langflow (Folder) do tenant.",
@@ -169,10 +179,25 @@ async def auto_login(
             customer.pk,
             api_key,
         )
+        logger.info(
+            "Langflow service API key provisioned and cached",
+            extra={
+                "user_id": current_user.id,
+                "tenant_id": customer.id,
+                "schema_name": schema_name,
+            },
+        )
+
+    # SECURITY FIX #1: api_key is NOT returned in response body.
+    # The key is cached server-side and should be accessed only via
+    # backend-controlled session or secure HTTP-only mechanisms.
+    logger.debug(
+        "Langflow auto-login: credentials generated",
+        extra={"user_id": current_user.id, "tenant_id": customer.id},
+    )
 
     return AutoLoginResponse(
         access_token=access_token,
-        api_key=api_key,
         workspace_id=str(customer.langflow_workspace_id),
         langflow_user_id=None,
     )

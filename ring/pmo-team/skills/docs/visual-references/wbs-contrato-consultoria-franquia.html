@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organograma Contratual — Consultoria em Franquia · Almeida Associados</title>
+  <style>
+    /* ─── Reset ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ─── Base ─── */
+    body {
+      font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+      background: #F0F2F5;
+      color: #1A1A2E;
+      min-height: 100vh;
+    }
+
+    /* ─── Outer wrapper (horizontal scroll on small screens) ─── */
+    .chart-scroll {
+      overflow-x: auto;
+      padding: 0 0 24px 0;
+    }
+
+    /* ─── Chart container ─── */
+    .chart {
+      min-width: 1300px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ════════════════════════════════════════
+       HEADER
+    ════════════════════════════════════════ */
+    .chart-header {
+      background: #12152E;
+      color: #fff;
+      padding: 14px 32px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .chart-header h1 {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-align: center;
+    }
+    .chart-header p {
+      font-size: 12px;
+      color: #90CAF9;
+      text-align: center;
+    }
+    .chart-header-meta {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 4px;
+    }
+    .chart-header-meta span {
+      font-size: 9px;
+      color: #546E7A;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* ════════════════════════════════════════
+       PORTFOLIO
+    ════════════════════════════════════════ */
+    .portfolio-row {
+      display: flex;
+      justify-content: center;
+      padding: 20px 32px 0;
+      position: relative;
+    }
+    /* vertical line from portfolio box down */
+    .portfolio-row::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 0; /* overridden below with padding trick */
+    }
+    .portfolio-box {
+      background: #12152E;
+      border: 1.5px solid #64B5F6;
+      border-radius: 6px;
+      padding: 8px 48px;
+      text-align: center;
+      position: relative;
+    }
+    .portfolio-box::after {
+      content: '';
+      position: absolute;
+      bottom: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 13px;
+      background: #90CAF9;
+    }
+    .portfolio-box .label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #90CAF9;
+      display: block;
+      margin-bottom: 3px;
+    }
+    .portfolio-box .name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* ════════════════════════════════════════
+       CONNECTOR TREE (portfolio → programs)
+    ════════════════════════════════════════ */
+    .conn-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 32px;
+    }
+    /* top vertical stub already drawn by .portfolio-box::after */
+    .conn-bridge {
+      position: relative;
+      display: flex;
+      width: 100%;
+      height: 14px;
+    }
+    /* horizontal line: from center of col-1 to center of col-5 */
+    .conn-bridge::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10%;
+      right: 10%;
+      border-top: 2px solid #90CAF9;
+    }
+    .conn-col {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+    .conn-tick {
+      width: 2px;
+      height: 14px;
+      background: #90CAF9;
+    }
+
+    /* ════════════════════════════════════════
+       PROGRAMS GRID
+    ════════════════════════════════════════ */
+    .programs-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      padding: 0 32px;
+      align-items: start;
+    }
+
+    /* ─── Program column ─── */
+    .program {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ─── Program header ─── */
+    .program-header {
+      border-radius: 4px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .program-header .prog-label {
+      display: block;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      margin-bottom: 4px;
+      opacity: 0.75;
+    }
+    .program-header .prog-name {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .program-header .prog-domains {
+      display: block;
+      font-size: 8.5px;
+      opacity: 0.8;
+      color: #fff;
+    }
+
+    /* ─── Project card ─── */
+    .project {
+      border-radius: 3px;
+      overflow: hidden;
+      border-width: 0.5px;
+      border-style: solid;
+    }
+    .project-header {
+      padding: 6px 8px;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.3;
+    }
+
+    /* ─── Flows list ─── */
+    .flows {
+      list-style: none;
+      padding: 6px 8px 8px;
+    }
+    .flows li {
+      font-size: 8.5px;
+      line-height: 1.6;
+      padding: 1px 0;
+    }
+    .flows li::before {
+      content: '▸ ';
+      font-size: 8px;
+    }
+
+    /* ════════════════════════════════════════
+       COLOR THEMES — 1 per program
+    ════════════════════════════════════════ */
+
+    /* 2.0 — Financeira */
+    .fin .program-header { background: #1565C0; }
+    .fin .program-header .prog-label { color: #BBDEFB; }
+    .fin .program-header .prog-domains { color: #90CAF9; }
+    .fin .project { background: #E3F2FD; border-color: #90CAF9; }
+    .fin .project-header { background: #1976D2; }
+    .fin .flows li { color: #0D47A1; }
+
+    /* 3.0 — Governança */
+    .gov .program-header { background: #1B5E20; }
+    .gov .program-header .prog-label { color: #C8E6C9; }
+    .gov .program-header .prog-domains { color: #A5D6A7; }
+    .gov .project { background: #E8F5E9; border-color: #A5D6A7; }
+    .gov .project-header { background: #388E3C; }
+    .gov .flows li { color: #1B5E20; }
+
+    /* 4.0 — Comercial */
+    .com .program-header { background: #BF360C; }
+    .com .program-header .prog-label { color: #FFCCBC; }
+    .com .program-header .prog-domains { color: #FFAB91; }
+    .com .project { background: #FBE9E7; border-color: #FFAB91; }
+    .com .project-header { background: #E64A19; }
+    .com .flows li { color: #BF360C; }
+
+    /* 5.0 — Operacional */
+    .ope .program-header { background: #4A148C; }
+    .ope .program-header .prog-label { color: #E1BEE7; }
+    .ope .program-header .prog-domains { color: #CE93D8; }
+    .ope .project { background: #F3E5F5; border-color: #CE93D8; }
+    .ope .project-header { background: #7B1FA2; }
+    .ope .flows li { color: #4A148C; }
+
+    /* 6.0 — Jurídica */
+    .jur .program-header { background: #B71C1C; }
+    .jur .program-header .prog-label { color: #FFCDD2; }
+    .jur .program-header .prog-domains { color: #EF9A9A; }
+    .jur .project { background: #FFEBEE; border-color: #EF9A9A; }
+    .jur .project-header { background: #C62828; }
+    .jur .flows li { color: #B71C1C; }
+
+    /* ════════════════════════════════════════
+       FOOTER
+    ════════════════════════════════════════ */
+    .chart-footer {
+      background: #12152E;
+      padding: 10px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .legend {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .chart-footer .meta {
+      font-size: 9px;
+      color: #546E7A;
+      text-align: right;
+    }
+    .chart-footer .center-meta {
+      font-size: 9px;
+      color: #546E7A;
+      text-align: center;
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+<div class="chart-scroll">
+<div class="chart">
+
+  <!-- ══ HEADER ══ -->
+  <header class="chart-header">
+    <h1>ORGANOGRAMA CONTRATUAL — PRESTAÇÃO DE SERVIÇOS DE CONSULTORIA EM FRANQUIA</h1>
+    <p>Almeida Associados · Assessoria e Formatação de Sistema de Franquia · Niterói / RJ</p>
+    <div class="chart-header-meta">
+      <span>PORTFÓLIO → PROGRAMA → PROJETO → FLUXO DE PROCESSO</span>
+      <span>Abr / 2026</span>
+    </div>
+  </header>
+
+  <!-- ══ PORTFOLIO ══ -->
+  <div class="portfolio-row">
+    <div class="portfolio-box">
+      <span class="label">PORTFÓLIO 1.1</span>
+      <span class="name">Franquia</span>
+    </div>
+  </div>
+
+  <!-- ══ CONNECTOR ══ -->
+  <div class="conn-wrapper">
+    <div class="conn-bridge">
+      <div class="conn-col"><div class="conn-tick"></div></div>
+      <div class="conn-col"><div class="conn-tick"></div></div>
+      <div class="conn-col"><div class="conn-tick"></div></div>
+      <div class="conn-col"><div class="conn-tick"></div></div>
+      <div class="conn-col"><div class="conn-tick"></div></div>
+    </div>
+  </div>
+
+  <!-- ══ PROGRAMS GRID ══ -->
+  <div class="programs-grid">
+
+    <!-- ════ PROGRAMA 2.0 — FINANCEIRA ════ -->
+    <div class="program fin">
+      <div class="program-header">
+        <span class="prog-label">PROGRAMA 2.0</span>
+        <span class="prog-name">Modelagem Financeira</span>
+        <span class="prog-domains">Domínios: Finanças · Escopo · Cronograma</span>
+      </div>
+
+      <div class="project">
+        <div class="project-header">2.1 · Diagnóstico e Mapeamento Financeiro As Is</div>
+        <ul class="flows">
+          <li>2.1.1 Mapeamento Financeiro As Is</li>
+          <li>2.1.2 Análise de Exposição a Risco Financeiro</li>
+          <li>2.1.3 Entregável: Relatório Arq. Financeira + Mapa de Risco</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">2.2 · Estruturação Econômica da Unidade</div>
+        <ul class="flows">
+          <li>2.2.1 Estruturação de CAPEX</li>
+          <li>2.2.2 Estruturação de OPEX</li>
+          <li>2.2.3 Cálculo de Ponto de Equilíbrio</li>
+          <li>2.2.4 Modelo de ROI (loja / quiosque / distribuidora)</li>
+          <li>2.2.5 Modelo de Payback</li>
+          <li>2.2.6 Sensibilidade financeira (otimista / base / pessimista)</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">2.3 · Tese de Investimento</div>
+        <ul class="flows">
+          <li>2.3.1 Construção da Tese</li>
+          <li>2.3.2 Validação da Tese</li>
+          <li>2.3.3 Entregável: Tese documentada e aprovada</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">2.4 · Precificação e Mix de Produtos</div>
+        <ul class="flows">
+          <li>2.4.1 Estrutura de Custos e Mark-ups</li>
+          <li>2.4.2 Mix e Políticas Comerciais</li>
+          <li>2.4.3 Entregável: Manual de Precificação e Mix</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">2.5 · Sistema de Monitoramento Financeiro</div>
+        <ul class="flows">
+          <li>2.5.1 Painel de Indicadores</li>
+          <li>2.5.2 Alertas e Exceções</li>
+          <li>2.5.3 Relatórios Financeiros Periódicos</li>
+          <li>2.5.4 Integração com Contabilidade e Sistemas de Gestão</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ════ PROGRAMA 3.0 — GOVERNANÇA ════ -->
+    <div class="program gov">
+      <div class="program-header">
+        <span class="prog-label">PROGRAMA 3.0</span>
+        <span class="prog-name">Modelagem de Governança</span>
+        <span class="prog-domains">Domínios: Governança · Partes Interessadas · Recursos</span>
+      </div>
+
+      <div class="project">
+        <div class="project-header">3.1 · Arquitetura de Governança As Is / To Be</div>
+        <ul class="flows">
+          <li>3.1.1 Diagnóstico de Governança As Is</li>
+          <li>3.1.2 Desenho de Arquitetura To Be</li>
+          <li>3.1.3 Entregável: Mapa As Is + Blueprint To Be</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">3.2 · Papéis, Responsabilidades e Canais Oficiais</div>
+        <ul class="flows">
+          <li>3.2.1 Matriz de Papéis (Franqueador × Franqueado)</li>
+          <li>3.2.2 Canais de Comunicação e Decisão</li>
+          <li>3.2.3 Entregável: Matriz RACI + Quadro de Canais e SLAs</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">3.3 · Sistema de Suporte, SLA e Relacionamento</div>
+        <ul class="flows">
+          <li>3.3.1 Modelo de Suporte</li>
+          <li>3.3.2 SLA e Catálogo de Serviços</li>
+          <li>3.3.3 Entregável: Manual de Suporte + Catálogo e Matriz SLA</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">3.4 · Auditoria, Conformidade e Monitoramento de Rede</div>
+        <ul class="flows">
+          <li>3.4.1 Modelo de Auditoria</li>
+          <li>3.4.2 Plano de Monitoramento Contínuo</li>
+          <li>3.4.3 Entregável: Manual de Auditoria + Plano de Monitoramento</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">3.5 · Política de Expansão e Seleção de Franqueados</div>
+        <ul class="flows">
+          <li>3.5.1 Política de Expansão e Territorialidade</li>
+          <li>3.5.2 Processo de Seleção de Franqueados</li>
+          <li>3.5.3 Entregável: Política de Expansão + Processo de Seleção</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">3.6 · Gestão de Conflitos, Reclamações e Contencioso</div>
+        <ul class="flows">
+          <li>3.6.1 Sistema de Registro e Tratamento de Conflitos</li>
+          <li>3.6.2 Integração com Lições Aprendidas</li>
+          <li>3.6.3 Encerramento de unidade e reversão de ativos</li>
+          <li>3.6.4 Entregável: Política de Conflitos + Lições Aprendidas</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ════ PROGRAMA 4.0 — COMERCIAL ════ -->
+    <div class="program com">
+      <div class="program-header">
+        <span class="prog-label">PROGRAMA 4.0</span>
+        <span class="prog-name">Modelagem Comercial</span>
+        <span class="prog-domains">Domínios: Escopo · Partes Interessadas</span>
+      </div>
+
+      <div class="project">
+        <div class="project-header">4.1 · Diagnóstico e Mapeamento Comercial As Is</div>
+        <ul class="flows">
+          <li>4.1.1 Mapeamento de Presença Digital e Marca</li>
+          <li>4.1.2 Mapeamento de Comunicação com Franqueados</li>
+          <li>4.1.3 Entregável: Relatório de Arquitetura Comercial Atual</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">4.2 · Manual da Marca</div>
+        <ul class="flows">
+          <li>4.2.1 Definição de Identidade de Marca</li>
+          <li>4.2.2 Especificação de Aplicações da Marca</li>
+          <li>4.2.3 Manual de Uso e Proteção da Marca</li>
+          <li>4.2.4 Entregável: Manual da Marca formalizado e comunicado</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">4.3 · Manual de Mídias Sociais</div>
+        <ul class="flows">
+          <li>4.3.1 Estruturação de Diretrizes de Conteúdo</li>
+          <li>4.3.2 Políticas de Resposta e Gestão de Crises Digitais</li>
+          <li>4.3.3 Entregável: Manual de Mídias Sociais formalizado</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">4.4 · Mentoria (Indiv.) — Gestão de Mídias Sociais</div>
+        <ul class="flows">
+          <li>4.4.1 Diagnóstico de Presença Digital da Unidade</li>
+          <li>4.4.2 Plano de Conteúdo e Calendário Editorial</li>
+          <li>4.4.3 Rotina de Monitoramento de Métricas e Ajustes</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">4.5 · Plano de Marketing de Lançamento</div>
+        <ul class="flows">
+          <li>4.5.1 Campanha de Pré-Lançamento</li>
+          <li>4.5.2 Cronograma de Ações de Inauguração</li>
+          <li>4.5.3 Plano de Comunicação Local</li>
+          <li>4.5.4 Entregável: Plano de Marketing de Lançamento por unidade</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">4.6 · Campanhas Cooperadas e Trade Marketing</div>
+        <ul class="flows">
+          <li>4.6.1 Diretrizes de Campanhas Cooperadas</li>
+          <li>4.6.2 Padrões de PDV e Experiência do Cliente</li>
+          <li>4.6.3 Monitoramento de Aderência e Resultados</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ════ PROGRAMA 5.0 — OPERACIONAL ════ -->
+    <div class="program ope">
+      <div class="program-header">
+        <span class="prog-label">PROGRAMA 5.0</span>
+        <span class="prog-name">Modelagem Operacional</span>
+        <span class="prog-domains">Domínios: Escopo · Cronograma · Recursos · Risco</span>
+      </div>
+
+      <div class="project">
+        <div class="project-header">5.1 · Cronograma de Implantação</div>
+        <ul class="flows">
+          <li>5.1.1 Planejamento macro de implantação</li>
+          <li>5.1.2 Detalhamento de marcos, entregas e dependências</li>
+          <li>5.1.3 Entregável: Cronograma mestre + checklists</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">5.2 · Mapeamento Operacional</div>
+        <ul class="flows">
+          <li>5.2.1 Levantamento de processos AS-IS (Loja e Quiosque)</li>
+          <li>5.2.2 Modelagem de processos TO-BE (Loja e Quiosque)</li>
+          <li>5.2.3 Pesquisa de Concorrência</li>
+          <li>5.2.4 Prevenção de Perdas no Varejo</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">5.3 · Sistema Operacional da Franquia (13 Manuais)</div>
+        <ul class="flows">
+          <li>5.3.1  Manual de Gestão de Crises</li>
+          <li>5.3.2  Manual de Gestão de Riscos</li>
+          <li>5.3.3  Manual de Qualidade</li>
+          <li>5.3.4  Manual de RH</li>
+          <li>5.3.5  Manual de Compras</li>
+          <li>5.3.6  Manual de Vendas</li>
+          <li>5.3.7  Manual de Marketing (PDV)</li>
+          <li>5.3.8  Manual Financeiro (Operação)</li>
+          <li>5.3.9  Manual Contábil (Operação)</li>
+          <li>5.3.10 Manual de Auditoria (Operação)</li>
+          <li>5.3.11 Manual de Compliance</li>
+          <li>5.3.12 Manual Pré-Operacional (Loja)</li>
+          <li>5.3.13 Manual Pré-Operacional (Quiosque)</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">5.4 · Gestão de Fornecedores e Cadeia de Suprimentos</div>
+        <ul class="flows">
+          <li>5.4.1 Qualificação e homologação de fornecedores críticos</li>
+          <li>5.4.2 Procedimentos de abastecimento e logística</li>
+          <li>5.4.3 Entregável: Política de suprimentos + fornecedores homologados</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">5.5 · Implantação do Sistema de Franquias</div>
+        <ul class="flows">
+          <li>5.5.1 Treinamento inicial do Franqueado — Loja</li>
+          <li>5.5.2 Treinamento inicial do Franqueado — Quiosque</li>
+          <li>5.5.3 Avaliação e reforço pós-treinamento</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ════ PROGRAMA 6.0 — JURÍDICA ════ -->
+    <div class="program jur">
+      <div class="program-header">
+        <span class="prog-label">PROGRAMA 6.0</span>
+        <span class="prog-name">Modelagem Jurídica</span>
+        <span class="prog-domains">Domínios: Governança · Escopo · Partes Int. · Risco</span>
+      </div>
+
+      <div class="project">
+        <div class="project-header">6.1 · Mentoria (Grupo) — Legislação e Jurisprudência</div>
+        <ul class="flows">
+          <li>6.1.1 Resumo executivo sobre o negócio do Franqueador</li>
+          <li>6.1.2 RIC — Relatório de Informações Contratuais</li>
+          <li>6.1.3 RJJ — Relatório de Jurisprudência e Jurimetria</li>
+          <li>6.1.4 SLA — Acordo de Nível de Serviço</li>
+          <li>6.1.5 CC — Consolidação Contratual</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">6.2 · Mentoria (Indiv.) — Mídias Sociais (Jurídico)</div>
+        <ul class="flows">
+          <li>6.2.1 Resumo executivo — foco em presença digital</li>
+          <li>6.2.2 RIC — Informações contratuais aplicadas a mídias</li>
+          <li>6.2.3 RJJ — Jurisprudência sobre uso de marca</li>
+          <li>6.2.4 SLA — Gestão de canais e conteúdo</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">6.3 · Consultoria (Indiv.) — Legislação e Jurisprudência</div>
+        <ul class="flows">
+          <li>6.3.1 Resumo executivo jurídico do modelo de franquia</li>
+          <li>6.3.2 RIC — Informações Contratuais da rede</li>
+          <li>6.3.3 RJJ — Jurisprudência e Jurimetria (API CNJ)</li>
+          <li>6.3.4 SLA jurídico como artefato de entrada</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">6.4 · Cerimônia de Entrega — Compilado Contratual</div>
+        <ul class="flows">
+          <li>6.4.1 Resumo executivo atualizado a partir do SLA</li>
+          <li>6.4.2 Atualização do RIC</li>
+          <li>6.4.3 CC — Consolidação Contratual final</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">6.5 · Canal Jurídico Seguro</div>
+        <ul class="flows">
+          <li>6.5.1 Avaliação de riscos jurídicos e contratuais</li>
+          <li>6.5.2 Gestão de base de posições jurídicas</li>
+          <li>6.5.3 Atendimento de consultas recorrentes (SLA)</li>
+          <li>6.5.4 Monitoramento legislativo e jurisprudencial</li>
+        </ul>
+      </div>
+
+      <div class="project">
+        <div class="project-header">6.6 · Gestão de Reclamações e Contencioso</div>
+        <ul class="flows">
+          <li>6.6.1 Registro e tratamento estruturado de reclamações</li>
+          <li>6.6.2 Lições aprendidas jurídicas</li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /programs-grid -->
+
+  <!-- ══ FOOTER ══ -->
+  <footer class="chart-footer">
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#1565C0"></div>
+        <span style="color:#BBDEFB">FINANCEIRA</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#1B5E20"></div>
+        <span style="color:#C8E6C9">GOVERNANÇA</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#BF360C"></div>
+        <span style="color:#FFCCBC">COMERCIAL</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#4A148C"></div>
+        <span style="color:#E1BEE7">OPERACIONAL</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#B71C1C"></div>
+        <span style="color:#FFCDD2">JURÍDICA</span>
+      </div>
+    </div>
+    <div class="center-meta">
+      5 Programas · 26 Projetos · Portfólio: Franquia · Almeida Associados · OAB/RJ 215.105
+    </div>
+    <div class="meta">Abril / 2026</div>
+  </footer>
+
+</div><!-- /chart -->
+</div><!-- /chart-scroll -->
+</body>
+</html>

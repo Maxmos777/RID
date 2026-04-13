@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluxo de Processos PMBOK — Portfólio Franquia · Almeida Associados</title>
+<style>
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS (inspired by PMBOK process flow
+   poster aesthetic — Ricardo Vargas / PMI)
+───────────────────────────────────────────── */
+:root {
+  --bg-page:       #0D1117;
+  --bg-header:     #12152E;
+  --bg-col-header: #1A1D35;
+  --bg-cell:       #161929;
+  --bg-cell-empty: rgba(255,255,255,0.025);
+  --border-grid:   rgba(255,255,255,0.07);
+  --border-card:   rgba(255,255,255,0.12);
+  --text-white:    #FFFFFF;
+  --text-dim:      #8892A4;
+  --text-dimmer:   #555E72;
+  --accent-gold:   #F59E0B;
+  --accent-gold-bg:rgba(245,158,11,0.12);
+
+  /* Process Group accent colors */
+  --ini: #1E88E5;
+  --pln: #43A047;
+  --exe: #FB8C00;
+  --mc:  #8E24AA;
+  --clo: #E53935;
+
+  /* Program colors */
+  --fin-dark:  #1565C0; --fin-mid: #1976D2; --fin-light: #E3F2FD; --fin-text: #0D47A1;
+  --gov-dark:  #1B5E20; --gov-mid: #388E3C; --gov-light: #E8F5E9; --gov-text: #1B5E20;
+  --com-dark:  #BF360C; --com-mid: #E64A19; --com-light: #FBE9E7; --com-text: #BF360C;
+  --ope-dark:  #4A148C; --ope-mid: #7B1FA2; --ope-light: #F3E5F5; --ope-text: #4A148C;
+  --jur-dark:  #B71C1C; --jur-mid: #C62828; --jur-light: #FFEBEE; --jur-text: #B71C1C;
+
+  --font: 'Segoe UI', system-ui, Arial, sans-serif;
+  --radius: 3px;
+}
+
+/* ─── Reset ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg-page);
+  color: var(--text-white);
+  min-height: 100vh;
+}
+
+/* ─── Scroll wrapper ─── */
+.chart-scroll { overflow-x: auto; }
+
+/* ─── Chart container ─── */
+.chart {
+  min-width: 1280px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════ */
+.chart-header {
+  background: var(--bg-header);
+  padding: 16px 24px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.chart-header-left h1 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--text-white);
+  line-height: 1.3;
+}
+.chart-header-left h1 span { color: #90CAF9; }
+.chart-header-left p {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 5px;
+}
+.chart-header-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+.chart-header-right .badge-pmbok {
+  display: inline-block;
+  background: rgba(144,202,249,0.12);
+  border: 1px solid rgba(144,202,249,0.25);
+  color: #90CAF9;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+.chart-header-right p {
+  font-size: 9px;
+  color: var(--text-dimmer);
+  margin-top: 6px;
+}
+
+/* ══════════════════════════════════════════
+   LEGEND BAR (abaixo do header)
+══════════════════════════════════════════ */
+.legend-bar {
+  background: var(--bg-header);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 8px 24px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.legend-section { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.legend-label { font-size: 8px; font-weight: 700; letter-spacing: 0.8px; color: var(--text-dimmer); text-transform: uppercase; margin-right: 4px; }
+.leg-item { display: flex; align-items: center; gap: 4px; font-size: 8.5px; color: var(--text-dim); }
+.leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.leg-sep { width: 1px; height: 16px; background: rgba(255,255,255,0.08); }
+
+/* ══════════════════════════════════════════
+   MAIN FLOW GRID
+   6 cols: [150px label] [1fr×5 process groups]
+══════════════════════════════════════════ */
+.flow-grid {
+  display: grid;
+  grid-template-columns: 148px repeat(5, 1fr);
+  border-left: 1px solid var(--border-grid);
+  border-top: 1px solid var(--border-grid);
+}
+
+/* ── Column headers row ── */
+.col-corner {
+  background: var(--bg-col-header);
+  border-right: 1px solid var(--border-grid);
+  border-bottom: 1px solid var(--border-grid);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 10px 10px 8px;
+}
+.col-corner span {
+  font-size: 8px;
+  color: var(--text-dimmer);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+.col-header {
+  background: var(--bg-col-header);
+  border-right: 1px solid var(--border-grid);
+  border-bottom: 2px solid;
+  padding: 12px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.col-header .pg-num  { font-size: 8px; font-weight: 700; letter-spacing: 1px; opacity: 0.5; }
+.col-header .pg-name { font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+.col-header .pg-sub  { font-size: 8.5px; color: var(--text-dim); line-height: 1.4; }
+
+.col-header.ini { border-color: var(--ini); }
+.col-header.ini .pg-name { color: #90CAF9; }
+.col-header.pln { border-color: var(--pln); }
+.col-header.pln .pg-name { color: #A5D6A7; }
+.col-header.exe { border-color: var(--exe); }
+.col-header.exe .pg-name { color: #FFCC80; }
+.col-header.mc  { border-color: var(--mc);  }
+.col-header.mc  .pg-name { color: #CE93D8; }
+.col-header.clo { border-color: var(--clo); }
+.col-header.clo .pg-name { color: #EF9A9A; }
+
+/* ── Program label cell (first column) ── */
+.prog-label {
+  border-right: 1px solid var(--border-grid);
+  border-bottom: 1px solid var(--border-grid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+  min-height: 180px;
+}
+.prog-label-inner {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.prog-label-num {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  opacity: 0.65;
+}
+.prog-label-name {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.prog-label-domains {
+  font-size: 8px;
+  opacity: 0.55;
+  white-space: nowrap;
+}
+
+.prog-label.fin { background: var(--fin-dark); }
+.prog-label.gov { background: var(--gov-dark); }
+.prog-label.com { background: var(--com-dark); }
+.prog-label.ope { background: var(--ope-dark); }
+.prog-label.jur { background: var(--jur-dark); }
+
+/* ── Process cell ── */
+.cell {
+  border-right: 1px solid var(--border-grid);
+  border-bottom: 1px solid var(--border-grid);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 180px;
+}
+.cell.empty {
+  background: var(--bg-cell-empty);
+}
+
+/* ── Flow card ── */
+.fc {
+  border-radius: var(--radius);
+  padding: 5px 7px 6px;
+  border-left: 3px solid;
+  border-top: 1.5px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: opacity 0.15s;
+}
+.fc:hover { opacity: 0.85; }
+
+.fc-id {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  opacity: 0.7;
+}
+.fc-name {
+  font-size: 8.5px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+.fc-foot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.domain-badge {
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+.deliverable-icon {
+  font-size: 7px;
+  margin-left: auto;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: var(--accent-gold-bg);
+  color: var(--accent-gold);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.fc.deliverable {
+  border-top-color: var(--accent-gold);
+}
+
+/* ── Program-specific card styles ── */
+.fc.fin { background: var(--fin-light); border-left-color: var(--fin-mid); }
+.fc.fin .fc-id   { color: var(--fin-dark); }
+.fc.fin .fc-name { color: var(--fin-text); }
+
+.fc.gov { background: var(--gov-light); border-left-color: var(--gov-mid); }
+.fc.gov .fc-id   { color: var(--gov-dark); }
+.fc.gov .fc-name { color: var(--gov-text); }
+
+.fc.com { background: var(--com-light); border-left-color: var(--com-mid); }
+.fc.com .fc-id   { color: var(--com-dark); }
+.fc.com .fc-name { color: var(--com-text); }
+
+.fc.ope { background: var(--ope-light); border-left-color: var(--ope-mid); }
+.fc.ope .fc-id   { color: var(--ope-dark); }
+.fc.ope .fc-name { color: var(--ope-text); }
+
+.fc.jur { background: var(--jur-light); border-left-color: var(--jur-mid); }
+.fc.jur .fc-id   { color: var(--jur-dark); }
+.fc.jur .fc-name { color: var(--jur-text); }
+
+/* ── Domain badge colors ── */
+.bd-FIN { background:rgba(21,101,192,.15); color:#90CAF9; }
+.bd-GOV { background:rgba(27,94,32,.15);  color:#A5D6A7; }
+.bd-SCO { background:rgba(69,90,100,.2);  color:#B0BEC5; }
+.bd-SCH { background:rgba(230,81,0,.15);  color:#FFAB91; }
+.bd-STK { background:rgba(0,105,92,.15);  color:#80CBC4; }
+.bd-RES { background:rgba(93,64,55,.2);   color:#BCAAA4; }
+.bd-RSK { background:rgba(198,40,40,.15); color:#EF9A9A; }
+
+/* ══════════════════════════════════════════
+   PROJECT HEADER (mini section divider inside cell)
+══════════════════════════════════════════ */
+.proj-divider {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 0 1px;
+  margin-top: 3px;
+}
+.proj-divider:first-child { margin-top: 0; }
+.proj-divider span {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  opacity: 0.4;
+  white-space: nowrap;
+}
+.proj-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+.chart-footer {
+  background: var(--bg-header);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.footer-left { display: flex; gap: 16px; flex-wrap: wrap; }
+.footer-prog { display: flex; align-items: center; gap: 5px; font-size: 8.5px; }
+.footer-prog-dot { width: 10px; height: 10px; border-radius: 2px; }
+.footer-prog-txt { color: var(--text-dim); font-weight: 600; }
+.footer-center { font-size: 8.5px; color: var(--text-dimmer); text-align: center; flex: 1; }
+.footer-right { font-size: 8.5px; color: var(--text-dimmer); }
+</style>
+</head>
+<body>
+<div class="chart-scroll">
+<div class="chart">
+
+<!-- ══ HEADER ══ -->
+<header class="chart-header">
+  <div class="chart-header-left">
+    <h1>FLUXO DE PROCESSOS PMBOK — <span>PORTFÓLIO FRANQUIA</span></h1>
+    <p>Almeida Associados · Consultoria em Formatação de Sistema de Franquia · Niterói / RJ · OAB/RJ 215.105</p>
+    <p style="margin-top:4px;font-size:10px;color:#546E7A;">
+      5 Programas · 26 Projetos · 81 Fluxos de Processo mapeados aos Grupos de Processos PMI
+    </p>
+  </div>
+  <div class="chart-header-right">
+    <div class="badge-pmbok">PMBOK® Guide 8th · Process Groups Practice Guide</div>
+    <p>Portfólio → Programa → Projeto → Fluxo</p>
+    <p style="margin-top:2px;">Abril / 2026</p>
+  </div>
+</header>
+
+<!-- ══ LEGEND BAR ══ -->
+<div class="legend-bar">
+  <span class="legend-label">Grupos de Processo:</span>
+  <div class="legend-section">
+    <div class="leg-item"><div class="leg-dot" style="background:var(--ini)"></div>INI · Iniciação</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--pln)"></div>PLN · Planejamento</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--exe)"></div>EXE · Execução</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--mc)"></div>M&amp;C · Monitoramento &amp; Controle</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--clo)"></div>CLO · Encerramento</div>
+  </div>
+  <div class="leg-sep"></div>
+  <span class="legend-label">Domínios PMBOK 8th:</span>
+  <div class="legend-section">
+    <div class="leg-item"><span class="domain-badge bd-FIN">FIN</span>Finanças</div>
+    <div class="leg-item"><span class="domain-badge bd-GOV">GOV</span>Governança</div>
+    <div class="leg-item"><span class="domain-badge bd-SCO">SCO</span>Escopo</div>
+    <div class="leg-item"><span class="domain-badge bd-SCH">SCH</span>Cronograma</div>
+    <div class="leg-item"><span class="domain-badge bd-STK">STK</span>Partes Int.</div>
+    <div class="leg-item"><span class="domain-badge bd-RES">RES</span>Recursos</div>
+    <div class="leg-item"><span class="domain-badge bd-RSK">RSK</span>Risco</div>
+  </div>
+  <div class="leg-sep"></div>
+  <div class="leg-item"><span style="font-size:8px;color:var(--accent-gold)">▲ borda dourada</span>&nbsp;= Entregável</div>
+</div>
+
+<!-- ══ FLOW GRID ══ -->
+<div class="flow-grid">
+
+  <!-- ── Column Headers ── -->
+  <div class="col-corner">
+    <span>PROGRAMA</span>
+    <span>Portfólio Franquia</span>
+  </div>
+  <div class="col-header ini">
+    <span class="pg-num">01 · INI</span>
+    <span class="pg-name">◈ Iniciação</span>
+    <span class="pg-sub">Autorizar · Definir · Levantar situação atual</span>
+  </div>
+  <div class="col-header pln">
+    <span class="pg-num">02 · PLN</span>
+    <span class="pg-name">◈ Planejamento</span>
+    <span class="pg-sub">Estruturar · Modelar · Definir políticas e planos</span>
+  </div>
+  <div class="col-header exe">
+    <span class="pg-num">03 · EXE</span>
+    <span class="pg-name">◈ Execução</span>
+    <span class="pg-sub">Elaborar manuais · Executar · Implementar</span>
+  </div>
+  <div class="col-header mc">
+    <span class="pg-num">04 · M&amp;C</span>
+    <span class="pg-name">◈ Monitoramento &amp; Controle</span>
+    <span class="pg-sub">Rastrear · Validar · Auditar · Regular</span>
+  </div>
+  <div class="col-header clo">
+    <span class="pg-num">05 · CLO</span>
+    <span class="pg-name">◈ Encerramento</span>
+    <span class="pg-sub">Formalizar entregáveis · Consolidar · Aprovar</span>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PROGRAMA 2.0 — MODELAGEM FINANCEIRA
+  ════════════════════════════════════════ -->
+  <div class="prog-label fin">
+    <div class="prog-label-inner">
+      <span class="prog-label-num">2.0</span>
+      <span class="prog-label-name">Modelagem Financeira</span>
+      <span class="prog-label-domains">FIN · SCO · SCH</span>
+    </div>
+  </div>
+
+  <!-- 2.0 · INI -->
+  <div class="cell">
+    <div class="proj-divider"><span>2.1 Diagnóstico As Is</span></div>
+    <div class="fc fin">
+      <span class="fc-id">2.1.1</span>
+      <span class="fc-name">Mapeamento Financeiro As Is</span>
+      <div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div>
+    </div>
+    <div class="fc fin">
+      <span class="fc-id">2.1.2</span>
+      <span class="fc-name">Análise de Exposição a Risco Financeiro</span>
+      <div class="fc-foot"><span class="domain-badge bd-RSK">RSK</span></div>
+    </div>
+  </div>
+
+  <!-- 2.0 · PLN -->
+  <div class="cell">
+    <div class="proj-divider"><span>2.2 Estruturação Econômica</span></div>
+    <div class="fc fin"><span class="fc-id">2.2.1</span><span class="fc-name">Estruturação de CAPEX</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="fc fin"><span class="fc-id">2.2.2</span><span class="fc-name">Estruturação de OPEX</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="fc fin"><span class="fc-id">2.2.3</span><span class="fc-name">Ponto de Equilíbrio</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="fc fin"><span class="fc-id">2.2.4</span><span class="fc-name">Modelo de ROI (loja/quiosque/distribuidora)</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="fc fin"><span class="fc-id">2.2.5</span><span class="fc-name">Modelo de Payback</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="fc fin"><span class="fc-id">2.2.6</span><span class="fc-name">Sensibilidade Financeira</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="proj-divider"><span>2.3 Tese de Investimento</span></div>
+    <div class="fc fin"><span class="fc-id">2.3.1</span><span class="fc-name">Construção da Tese</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="proj-divider"><span>2.4 Precificação e Mix</span></div>
+    <div class="fc fin"><span class="fc-id">2.4.1</span><span class="fc-name">Estrutura de Custos e Mark-ups</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="fc fin"><span class="fc-id">2.4.2</span><span class="fc-name">Mix e Políticas Comerciais</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+  </div>
+
+  <!-- 2.0 · EXE -->
+  <div class="cell">
+    <div class="proj-divider"><span>2.5 Monitoramento</span></div>
+    <div class="fc fin"><span class="fc-id">2.5.1</span><span class="fc-name">Painel de Indicadores</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="fc fin"><span class="fc-id">2.5.4</span><span class="fc-name">Integração com Contabilidade e Sistemas</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+  </div>
+
+  <!-- 2.0 · M&C -->
+  <div class="cell">
+    <div class="proj-divider"><span>2.3 Tese</span></div>
+    <div class="fc fin"><span class="fc-id">2.3.2</span><span class="fc-name">Validação da Tese</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="proj-divider"><span>2.5 Monitoramento</span></div>
+    <div class="fc fin"><span class="fc-id">2.5.2</span><span class="fc-name">Alertas e Exceções</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+    <div class="fc fin"><span class="fc-id">2.5.3</span><span class="fc-name">Relatórios Financeiros Periódicos</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span></div></div>
+  </div>
+
+  <!-- 2.0 · CLO -->
+  <div class="cell">
+    <div class="proj-divider"><span>2.1 Diagnóstico</span></div>
+    <div class="fc fin deliverable"><span class="fc-id">2.1.3</span><span class="fc-name">Relatório Arq. Financeira + Mapa de Risco</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="proj-divider"><span>2.3 Tese</span></div>
+    <div class="fc fin deliverable"><span class="fc-id">2.3.3</span><span class="fc-name">Tese Documentada e Aprovada</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="proj-divider"><span>2.4 Precificação</span></div>
+    <div class="fc fin deliverable"><span class="fc-id">2.4.3</span><span class="fc-name">Manual de Precificação e Mix</span><div class="fc-foot"><span class="domain-badge bd-FIN">FIN</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PROGRAMA 3.0 — MODELAGEM DE GOVERNANÇA
+  ════════════════════════════════════════ -->
+  <div class="prog-label gov">
+    <div class="prog-label-inner">
+      <span class="prog-label-num">3.0</span>
+      <span class="prog-label-name">Modelagem de Governança</span>
+      <span class="prog-label-domains">GOV · STK · RES</span>
+    </div>
+  </div>
+
+  <!-- 3.0 · INI -->
+  <div class="cell">
+    <div class="proj-divider"><span>3.1 Arquitetura</span></div>
+    <div class="fc gov"><span class="fc-id">3.1.1</span><span class="fc-name">Diagnóstico de Governança As Is</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+  </div>
+
+  <!-- 3.0 · PLN -->
+  <div class="cell">
+    <div class="proj-divider"><span>3.1 Arquitetura</span></div>
+    <div class="fc gov"><span class="fc-id">3.1.2</span><span class="fc-name">Desenho de Arquitetura To Be</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="proj-divider"><span>3.2 Papéis e Canais</span></div>
+    <div class="fc gov"><span class="fc-id">3.2.1</span><span class="fc-name">Matriz de Papéis (Franqueador × Franqueado)</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="fc gov"><span class="fc-id">3.2.2</span><span class="fc-name">Canais de Comunicação e Decisão</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+    <div class="proj-divider"><span>3.3 Suporte e SLA</span></div>
+    <div class="fc gov"><span class="fc-id">3.3.1</span><span class="fc-name">Modelo de Suporte</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+    <div class="fc gov"><span class="fc-id">3.3.2</span><span class="fc-name">SLA e Catálogo de Serviços</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="proj-divider"><span>3.4 Auditoria</span></div>
+    <div class="fc gov"><span class="fc-id">3.4.1</span><span class="fc-name">Modelo de Auditoria</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="proj-divider"><span>3.5 Expansão</span></div>
+    <div class="fc gov"><span class="fc-id">3.5.1</span><span class="fc-name">Política de Expansão e Territorialidade</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="fc gov"><span class="fc-id">3.5.2</span><span class="fc-name">Processo de Seleção de Franqueados</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+  </div>
+
+  <!-- 3.0 · EXE -->
+  <div class="cell">
+    <div class="proj-divider"><span>3.6 Conflitos</span></div>
+    <div class="fc gov"><span class="fc-id">3.6.1</span><span class="fc-name">Sistema de Registro e Tratamento de Conflitos</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+  </div>
+
+  <!-- 3.0 · M&C -->
+  <div class="cell">
+    <div class="proj-divider"><span>3.4 Auditoria</span></div>
+    <div class="fc gov"><span class="fc-id">3.4.2</span><span class="fc-name">Plano de Monitoramento Contínuo</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="proj-divider"><span>3.6 Conflitos</span></div>
+    <div class="fc gov"><span class="fc-id">3.6.2</span><span class="fc-name">Integração com Lições Aprendidas</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+  </div>
+
+  <!-- 3.0 · CLO -->
+  <div class="cell">
+    <div class="proj-divider"><span>3.1–3.5 Entregáveis</span></div>
+    <div class="fc gov deliverable"><span class="fc-id">3.1.3</span><span class="fc-name">Mapa As Is + Blueprint To Be</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="fc gov deliverable"><span class="fc-id">3.2.3</span><span class="fc-name">Matriz RACI + Quadro de Canais e SLAs</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="fc gov deliverable"><span class="fc-id">3.3.3</span><span class="fc-name">Manual de Suporte + Catálogo e Matriz SLA</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="fc gov deliverable"><span class="fc-id">3.4.3</span><span class="fc-name">Manual de Auditoria + Plano de Monitoramento</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="fc gov deliverable"><span class="fc-id">3.5.3</span><span class="fc-name">Política Expansão + Processo de Seleção</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="proj-divider"><span>3.6 Conflitos</span></div>
+    <div class="fc gov"><span class="fc-id">3.6.3</span><span class="fc-name">Encerramento de Unidade e Reversão de Ativos</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="fc gov deliverable"><span class="fc-id">3.6.4</span><span class="fc-name">Política de Conflitos + Lições Aprendidas</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PROGRAMA 4.0 — MODELAGEM COMERCIAL
+  ════════════════════════════════════════ -->
+  <div class="prog-label com">
+    <div class="prog-label-inner">
+      <span class="prog-label-num">4.0</span>
+      <span class="prog-label-name">Modelagem Comercial</span>
+      <span class="prog-label-domains">SCO · STK</span>
+    </div>
+  </div>
+
+  <!-- 4.0 · INI -->
+  <div class="cell">
+    <div class="proj-divider"><span>4.1 Diagnóstico</span></div>
+    <div class="fc com"><span class="fc-id">4.1.1</span><span class="fc-name">Mapeamento de Presença Digital e Marca</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+    <div class="fc com"><span class="fc-id">4.1.2</span><span class="fc-name">Mapeamento de Comunicação com Franqueados</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+    <div class="proj-divider"><span>4.4 Mentoria</span></div>
+    <div class="fc com"><span class="fc-id">4.4.1</span><span class="fc-name">Diagnóstico de Presença Digital da Unidade</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+  </div>
+
+  <!-- 4.0 · PLN -->
+  <div class="cell">
+    <div class="proj-divider"><span>4.2 Manual da Marca</span></div>
+    <div class="fc com"><span class="fc-id">4.2.1</span><span class="fc-name">Definição de Identidade de Marca</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc com"><span class="fc-id">4.2.2</span><span class="fc-name">Especificação de Aplicações da Marca</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="proj-divider"><span>4.3 Manual Mídias Sociais</span></div>
+    <div class="fc com"><span class="fc-id">4.3.1</span><span class="fc-name">Estruturação de Diretrizes de Conteúdo</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc com"><span class="fc-id">4.3.2</span><span class="fc-name">Políticas de Resposta e Gestão de Crises</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="proj-divider"><span>4.4 Mentoria</span></div>
+    <div class="fc com"><span class="fc-id">4.4.2</span><span class="fc-name">Plano de Conteúdo e Calendário Editorial</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+    <div class="proj-divider"><span>4.5 Plano de Marketing</span></div>
+    <div class="fc com"><span class="fc-id">4.5.2</span><span class="fc-name">Cronograma de Ações de Inauguração</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc com"><span class="fc-id">4.5.3</span><span class="fc-name">Plano de Comunicação Local</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+    <div class="proj-divider"><span>4.6 Campanhas</span></div>
+    <div class="fc com"><span class="fc-id">4.6.1</span><span class="fc-name">Diretrizes de Campanhas Cooperadas</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+  </div>
+
+  <!-- 4.0 · EXE -->
+  <div class="cell">
+    <div class="proj-divider"><span>4.2 Manual da Marca</span></div>
+    <div class="fc com"><span class="fc-id">4.2.3</span><span class="fc-name">Manual de Uso e Proteção da Marca</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="proj-divider"><span>4.5 Plano de Marketing</span></div>
+    <div class="fc com"><span class="fc-id">4.5.1</span><span class="fc-name">Campanha de Pré-Lançamento</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+    <div class="proj-divider"><span>4.6 Campanhas</span></div>
+    <div class="fc com"><span class="fc-id">4.6.2</span><span class="fc-name">Padrões de PDV e Experiência do Cliente</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+  </div>
+
+  <!-- 4.0 · M&C -->
+  <div class="cell">
+    <div class="proj-divider"><span>4.4 Mentoria</span></div>
+    <div class="fc com"><span class="fc-id">4.4.3</span><span class="fc-name">Monitoramento de Métricas Digitais e Ajustes</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+    <div class="proj-divider"><span>4.6 Campanhas</span></div>
+    <div class="fc com"><span class="fc-id">4.6.3</span><span class="fc-name">Monitoramento de Aderência e Resultados</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+  </div>
+
+  <!-- 4.0 · CLO -->
+  <div class="cell">
+    <div class="proj-divider"><span>4.1–4.5 Entregáveis</span></div>
+    <div class="fc com deliverable"><span class="fc-id">4.1.3</span><span class="fc-name">Relatório de Arquitetura Comercial Atual</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="fc com deliverable"><span class="fc-id">4.2.4</span><span class="fc-name">Manual da Marca Formalizado e Comunicado</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="fc com deliverable"><span class="fc-id">4.3.3</span><span class="fc-name">Manual de Mídias Sociais Formalizado</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="fc com deliverable"><span class="fc-id">4.5.4</span><span class="fc-name">Plano de Marketing de Lançamento por Unidade</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PROGRAMA 5.0 — MODELAGEM OPERACIONAL
+  ════════════════════════════════════════ -->
+  <div class="prog-label ope">
+    <div class="prog-label-inner">
+      <span class="prog-label-num">5.0</span>
+      <span class="prog-label-name">Modelagem Operacional</span>
+      <span class="prog-label-domains">SCO · SCH · RES · RSK</span>
+    </div>
+  </div>
+
+  <!-- 5.0 · INI -->
+  <div class="cell">
+    <div class="proj-divider"><span>5.2 Mapeamento Op.</span></div>
+    <div class="fc ope"><span class="fc-id">5.2.1</span><span class="fc-name">Levantamento de Processos AS-IS (Loja/Quiosque)</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.2.3</span><span class="fc-name">Pesquisa de Concorrência</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+  </div>
+
+  <!-- 5.0 · PLN -->
+  <div class="cell">
+    <div class="proj-divider"><span>5.1 Cronograma</span></div>
+    <div class="fc ope"><span class="fc-id">5.1.1</span><span class="fc-name">Planejamento Macro de Implantação</span><div class="fc-foot"><span class="domain-badge bd-SCH">SCH</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.1.2</span><span class="fc-name">Detalhamento de Marcos, Entregas e Dependências</span><div class="fc-foot"><span class="domain-badge bd-SCH">SCH</span></div></div>
+    <div class="proj-divider"><span>5.2 Mapeamento Op.</span></div>
+    <div class="fc ope"><span class="fc-id">5.2.2</span><span class="fc-name">Modelagem de Processos TO-BE (Loja/Quiosque)</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.2.4</span><span class="fc-name">Prevenção de Perdas no Varejo</span><div class="fc-foot"><span class="domain-badge bd-RSK">RSK</span></div></div>
+  </div>
+
+  <!-- 5.0 · EXE -->
+  <div class="cell">
+    <div class="proj-divider"><span>5.3 Sistema Op. (13 manuais)</span></div>
+    <div class="fc ope"><span class="fc-id">5.3.1</span><span class="fc-name">Manual de Gestão de Crises</span><div class="fc-foot"><span class="domain-badge bd-RSK">RSK</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.2</span><span class="fc-name">Manual de Gestão de Riscos</span><div class="fc-foot"><span class="domain-badge bd-RSK">RSK</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.3</span><span class="fc-name">Manual de Qualidade</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.4</span><span class="fc-name">Manual de RH</span><div class="fc-foot"><span class="domain-badge bd-RES">RES</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.5</span><span class="fc-name">Manual de Compras</span><div class="fc-foot"><span class="domain-badge bd-RES">RES</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.6</span><span class="fc-name">Manual de Vendas</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.7</span><span class="fc-name">Manual de Marketing (PDV)</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.8</span><span class="fc-name">Manual Financeiro (Operação)</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.9</span><span class="fc-name">Manual Contábil (Operação)</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.10</span><span class="fc-name">Manual de Auditoria (Operação)</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.11</span><span class="fc-name">Manual de Compliance</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.12</span><span class="fc-name">Manual Pré-Operacional (Loja)</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.3.13</span><span class="fc-name">Manual Pré-Operacional (Quiosque)</span><div class="fc-foot"><span class="domain-badge bd-SCO">SCO</span></div></div>
+    <div class="proj-divider"><span>5.4 Fornecedores</span></div>
+    <div class="fc ope"><span class="fc-id">5.4.1</span><span class="fc-name">Qualificação e Homologação de Fornecedores</span><div class="fc-foot"><span class="domain-badge bd-RES">RES</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.4.2</span><span class="fc-name">Procedimentos de Abastecimento e Logística</span><div class="fc-foot"><span class="domain-badge bd-RES">RES</span></div></div>
+    <div class="proj-divider"><span>5.5 Treinamento</span></div>
+    <div class="fc ope"><span class="fc-id">5.5.1</span><span class="fc-name">Treinamento Inicial do Franqueado — Loja</span><div class="fc-foot"><span class="domain-badge bd-RES">RES</span></div></div>
+    <div class="fc ope"><span class="fc-id">5.5.2</span><span class="fc-name">Treinamento Inicial do Franqueado — Quiosque</span><div class="fc-foot"><span class="domain-badge bd-RES">RES</span></div></div>
+  </div>
+
+  <!-- 5.0 · M&C -->
+  <div class="cell">
+    <div class="proj-divider"><span>5.5 Treinamento</span></div>
+    <div class="fc ope"><span class="fc-id">5.5.3</span><span class="fc-name">Avaliação e Reforço Pós-Treinamento</span><div class="fc-foot"><span class="domain-badge bd-RES">RES</span></div></div>
+  </div>
+
+  <!-- 5.0 · CLO -->
+  <div class="cell">
+    <div class="proj-divider"><span>5.1 Cronograma</span></div>
+    <div class="fc ope deliverable"><span class="fc-id">5.1.3</span><span class="fc-name">Cronograma Mestre + Checklists de Implantação</span><div class="fc-foot"><span class="domain-badge bd-SCH">SCH</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="proj-divider"><span>5.4 Fornecedores</span></div>
+    <div class="fc ope deliverable"><span class="fc-id">5.4.3</span><span class="fc-name">Política de Suprimentos + Fornecedores Homologados</span><div class="fc-foot"><span class="domain-badge bd-RES">RES</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PROGRAMA 6.0 — MODELAGEM JURÍDICA
+  ════════════════════════════════════════ -->
+  <div class="prog-label jur">
+    <div class="prog-label-inner">
+      <span class="prog-label-num">6.0</span>
+      <span class="prog-label-name">Modelagem Jurídica</span>
+      <span class="prog-label-domains">GOV · SCO · STK · RSK</span>
+    </div>
+  </div>
+
+  <!-- 6.0 · INI -->
+  <div class="cell">
+    <div class="proj-divider"><span>6.1 Mentoria Grupo</span></div>
+    <div class="fc jur"><span class="fc-id">6.1.1</span><span class="fc-name">Resumo Executivo sobre o Negócio do Franqueador</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="proj-divider"><span>6.2 Mentoria Individual</span></div>
+    <div class="fc jur"><span class="fc-id">6.2.1</span><span class="fc-name">Resumo Executivo — Presença Digital</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+    <div class="proj-divider"><span>6.3 Consultoria</span></div>
+    <div class="fc jur"><span class="fc-id">6.3.1</span><span class="fc-name">Resumo Executivo Jurídico do Modelo de Franquia</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+  </div>
+
+  <!-- 6.0 · PLN -->
+  <div class="cell">
+    <div class="proj-divider"><span>6.1 Mentoria Grupo</span></div>
+    <div class="fc jur"><span class="fc-id">6.1.2</span><span class="fc-name">RIC — Relatório de Informações Contratuais</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="fc jur"><span class="fc-id">6.1.3</span><span class="fc-name">RJJ — Relatório de Jurisprudência e Jurimetria</span><div class="fc-foot"><span class="domain-badge bd-RSK">RSK</span></div></div>
+    <div class="fc jur"><span class="fc-id">6.1.4</span><span class="fc-name">SLA — Acordo de Nível de Serviço</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="proj-divider"><span>6.2 Mentoria Individual</span></div>
+    <div class="fc jur"><span class="fc-id">6.2.2</span><span class="fc-name">RIC — Informações Contratuais · Mídias Sociais</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="fc jur"><span class="fc-id">6.2.3</span><span class="fc-name">RJJ — Jurisprudência sobre Uso de Marca</span><div class="fc-foot"><span class="domain-badge bd-RSK">RSK</span></div></div>
+    <div class="fc jur"><span class="fc-id">6.2.4</span><span class="fc-name">SLA — Gestão de Canais e Conteúdo</span><div class="fc-foot"><span class="domain-badge bd-STK">STK</span></div></div>
+    <div class="proj-divider"><span>6.3 Consultoria</span></div>
+    <div class="fc jur"><span class="fc-id">6.3.2</span><span class="fc-name">RIC — Informações Contratuais da Rede</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="fc jur"><span class="fc-id">6.3.3</span><span class="fc-name">RJJ — Jurisprudência e Jurimetria (API CNJ)</span><div class="fc-foot"><span class="domain-badge bd-RSK">RSK</span></div></div>
+    <div class="fc jur"><span class="fc-id">6.3.4</span><span class="fc-name">SLA Jurídico como Artefato de Entrada</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+  </div>
+
+  <!-- 6.0 · EXE -->
+  <div class="cell">
+    <div class="proj-divider"><span>6.5 Canal Jurídico</span></div>
+    <div class="fc jur"><span class="fc-id">6.5.2</span><span class="fc-name">Gestão de Base de Posições Jurídicas</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="fc jur"><span class="fc-id">6.5.3</span><span class="fc-name">Atendimento de Consultas Recorrentes (SLA)</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="proj-divider"><span>6.6 Reclamações</span></div>
+    <div class="fc jur"><span class="fc-id">6.6.1</span><span class="fc-name">Registro e Tratamento Estruturado de Reclamações</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+  </div>
+
+  <!-- 6.0 · M&C -->
+  <div class="cell">
+    <div class="proj-divider"><span>6.5 Canal Jurídico</span></div>
+    <div class="fc jur"><span class="fc-id">6.5.1</span><span class="fc-name">Avaliação de Riscos Jurídicos e Contratuais</span><div class="fc-foot"><span class="domain-badge bd-RSK">RSK</span></div></div>
+    <div class="fc jur"><span class="fc-id">6.5.4</span><span class="fc-name">Monitoramento Legislativo e Jurisprudencial</span><div class="fc-foot"><span class="domain-badge bd-RSK">RSK</span></div></div>
+  </div>
+
+  <!-- 6.0 · CLO -->
+  <div class="cell">
+    <div class="proj-divider"><span>6.1 Mentoria Grupo</span></div>
+    <div class="fc jur deliverable"><span class="fc-id">6.1.5</span><span class="fc-name">CC — Consolidação Contratual</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="proj-divider"><span>6.4 Cerimônia de Entrega</span></div>
+    <div class="fc jur"><span class="fc-id">6.4.1</span><span class="fc-name">Resumo Executivo Atualizado a partir do SLA</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="fc jur"><span class="fc-id">6.4.2</span><span class="fc-name">Atualização do RIC</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span></div></div>
+    <div class="fc jur deliverable"><span class="fc-id">6.4.3</span><span class="fc-name">CC — Consolidação Contratual Final</span><div class="fc-foot"><span class="domain-badge bd-GOV">GOV</span><span class="deliverable-icon">✓ ENTREGÁVEL</span></div></div>
+    <div class="proj-divider"><span>6.6 Reclamações</span></div>
+    <div class="fc jur"><span class="fc-id">6.6.2</span><span class="fc-name">Lições Aprendidas Jurídicas</span><div class="fc-foot"><span class="domain-badge bd-RSK">RSK</span></div></div>
+  </div>
+
+</div><!-- /flow-grid -->
+
+<!-- ══ FOOTER ══ -->
+<footer class="chart-footer">
+  <div class="footer-left">
+    <div class="footer-prog"><div class="footer-prog-dot" style="background:#1565C0"></div><span class="footer-prog-txt">2.0 Financeira</span></div>
+    <div class="footer-prog"><div class="footer-prog-dot" style="background:#1B5E20"></div><span class="footer-prog-txt">3.0 Governança</span></div>
+    <div class="footer-prog"><div class="footer-prog-dot" style="background:#BF360C"></div><span class="footer-prog-txt">4.0 Comercial</span></div>
+    <div class="footer-prog"><div class="footer-prog-dot" style="background:#4A148C"></div><span class="footer-prog-txt">5.0 Operacional</span></div>
+    <div class="footer-prog"><div class="footer-prog-dot" style="background:#B71C1C"></div><span class="footer-prog-txt">6.0 Jurídica</span></div>
+  </div>
+  <div class="footer-center">
+    5 Programas · 26 Projetos · 81 Fluxos · PMBOK® Guide 8th Edition · Process Groups Practice Guide (PMI, 2023)<br>
+    Almeida Associados · Portfólio Franquia · OAB/RJ 215.105 · Matheus de Almeida Medeiros
+  </div>
+  <div class="footer-right">Abril / 2026</div>
+</footer>
+
+</div><!-- /chart -->
+</div><!-- /chart-scroll -->
+</body>
+</html>

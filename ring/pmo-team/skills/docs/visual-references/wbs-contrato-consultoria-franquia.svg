@@ -1,0 +1,333 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="950" viewBox="0 0 2400 950" font-family="'Segoe UI', Arial, Helvetica, sans-serif">
+
+  <!-- Background -->
+  <rect width="2400" height="950" fill="#F7F8FA"/>
+
+  <!-- Header bar -->
+  <rect x="0" y="0" width="2400" height="70" fill="#12152E"/>
+  <text x="1200" y="27" text-anchor="middle" fill="white" font-size="17" font-weight="bold" letter-spacing="0.5">ORGANOGRAMA CONTRATUAL — PRESTAÇÃO DE SERVIÇOS DE CONSULTORIA EM FRANQUIA</text>
+  <text x="1200" y="50" text-anchor="middle" fill="#90CAF9" font-size="12">Almeida Associados · Assessoria e Formatação de Sistema de Franquia · Niterói / RJ</text>
+  <text x="30" y="60" fill="#546E7A" font-size="9" font-weight="bold">PORTFÓLIO → PROGRAMA → PROJETO → FLUXO DE PROCESSO</text>
+  <text x="2370" y="60" text-anchor="end" fill="#546E7A" font-size="9">Abr / 2026</text>
+
+  <!-- PORTFOLIO -->
+  <rect x="925" y="80" width="550" height="46" rx="6" fill="#12152E" stroke="#64B5F6" stroke-width="1.5"/>
+  <text x="1200" y="99" text-anchor="middle" fill="#90CAF9" font-size="9" font-weight="bold" letter-spacing="1">PORTFÓLIO 1.1</text>
+  <text x="1200" y="117" text-anchor="middle" fill="white" font-size="14" font-weight="bold">Franquia</text>
+
+  <!-- Portfolio → Programs connectors -->
+  <line x1="1200" y1="126" x2="1200" y2="147" stroke="#90CAF9" stroke-width="1.2"/>
+  <line x1="250" y1="147" x2="2150" y2="147" stroke="#90CAF9" stroke-width="1.2"/>
+  <line x1="250"  y1="147" x2="250"  y2="157" stroke="#90CAF9" stroke-width="1.2"/>
+  <line x1="725"  y1="147" x2="725"  y2="157" stroke="#90CAF9" stroke-width="1.2"/>
+  <line x1="1200" y1="147" x2="1200" y2="157" stroke="#90CAF9" stroke-width="1.2"/>
+  <line x1="1675" y1="147" x2="1675" y2="157" stroke="#90CAF9" stroke-width="1.2"/>
+  <line x1="2150" y1="147" x2="2150" y2="157" stroke="#90CAF9" stroke-width="1.2"/>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PROGRAMA 2.0 — MODELAGEM FINANCEIRA   col x=20  w=460
+       ══════════════════════════════════════════════════════════ -->
+  <rect x="20" y="157" width="460" height="60" rx="4" fill="#1565C0"/>
+  <text x="250" y="177" text-anchor="middle" fill="#BBDEFB" font-size="9" font-weight="bold" letter-spacing="1">PROGRAMA 2.0</text>
+  <text x="250" y="197" text-anchor="middle" fill="white" font-size="13" font-weight="bold">Modelagem Financeira</text>
+  <text x="250" y="212" text-anchor="middle" fill="#90CAF9" font-size="9">Domínios: Finanças · Escopo · Cronograma</text>
+
+  <!-- 2.1 -->
+  <rect x="20" y="225" width="460" height="87" rx="3" fill="#E3F2FD" stroke="#90CAF9" stroke-width="0.5"/>
+  <rect x="20" y="225" width="460" height="25" rx="3" fill="#1976D2"/>
+  <text x="30" y="242" fill="white" font-size="10" font-weight="bold">2.1 · Diagnóstico e Mapeamento Financeiro As Is</text>
+  <text x="30" y="262" fill="#0D47A1" font-size="9">▸ 2.1.1  Mapeamento Financeiro As Is</text>
+  <text x="30" y="280" fill="#0D47A1" font-size="9">▸ 2.1.2  Análise de Exposição a Risco Financeiro</text>
+  <text x="30" y="298" fill="#0D47A1" font-size="9">▸ 2.1.3  Entregável: Relatório Arq. Financeira + Mapa de Risco</text>
+
+  <!-- 2.2 -->
+  <rect x="20" y="320" width="460" height="141" rx="3" fill="#E3F2FD" stroke="#90CAF9" stroke-width="0.5"/>
+  <rect x="20" y="320" width="460" height="25" rx="3" fill="#1976D2"/>
+  <text x="30" y="337" fill="white" font-size="10" font-weight="bold">2.2 · Estruturação Econômica da Unidade</text>
+  <text x="30" y="357" fill="#0D47A1" font-size="9">▸ 2.2.1  Estruturação de CAPEX</text>
+  <text x="30" y="375" fill="#0D47A1" font-size="9">▸ 2.2.2  Estruturação de OPEX</text>
+  <text x="30" y="393" fill="#0D47A1" font-size="9">▸ 2.2.3  Cálculo de Ponto de Equilíbrio</text>
+  <text x="30" y="411" fill="#0D47A1" font-size="9">▸ 2.2.4  Modelo de ROI (loja / quiosque / distribuidora)</text>
+  <text x="30" y="429" fill="#0D47A1" font-size="9">▸ 2.2.5  Modelo de Payback</text>
+  <text x="30" y="447" fill="#0D47A1" font-size="9">▸ 2.2.6  Sensibilidade financeira (otimista / base / pessimista)</text>
+
+  <!-- 2.3 -->
+  <rect x="20" y="469" width="460" height="87" rx="3" fill="#E3F2FD" stroke="#90CAF9" stroke-width="0.5"/>
+  <rect x="20" y="469" width="460" height="25" rx="3" fill="#1976D2"/>
+  <text x="30" y="486" fill="white" font-size="10" font-weight="bold">2.3 · Tese de Investimento</text>
+  <text x="30" y="506" fill="#0D47A1" font-size="9">▸ 2.3.1  Construção da Tese</text>
+  <text x="30" y="524" fill="#0D47A1" font-size="9">▸ 2.3.2  Validação da Tese</text>
+  <text x="30" y="542" fill="#0D47A1" font-size="9">▸ 2.3.3  Entregável: Tese documentada e aprovada</text>
+
+  <!-- 2.4 -->
+  <rect x="20" y="564" width="460" height="87" rx="3" fill="#E3F2FD" stroke="#90CAF9" stroke-width="0.5"/>
+  <rect x="20" y="564" width="460" height="25" rx="3" fill="#1976D2"/>
+  <text x="30" y="581" fill="white" font-size="10" font-weight="bold">2.4 · Precificação e Mix de Produtos</text>
+  <text x="30" y="601" fill="#0D47A1" font-size="9">▸ 2.4.1  Estrutura de Custos e Mark-ups</text>
+  <text x="30" y="619" fill="#0D47A1" font-size="9">▸ 2.4.2  Mix e Políticas Comerciais</text>
+  <text x="30" y="637" fill="#0D47A1" font-size="9">▸ 2.4.3  Entregável: Manual de Precificação e Mix</text>
+
+  <!-- 2.5 -->
+  <rect x="20" y="659" width="460" height="105" rx="3" fill="#E3F2FD" stroke="#90CAF9" stroke-width="0.5"/>
+  <rect x="20" y="659" width="460" height="25" rx="3" fill="#1976D2"/>
+  <text x="30" y="676" fill="white" font-size="10" font-weight="bold">2.5 · Sistema de Monitoramento Financeiro</text>
+  <text x="30" y="696" fill="#0D47A1" font-size="9">▸ 2.5.1  Painel de Indicadores</text>
+  <text x="30" y="714" fill="#0D47A1" font-size="9">▸ 2.5.2  Alertas e Exceções</text>
+  <text x="30" y="732" fill="#0D47A1" font-size="9">▸ 2.5.3  Relatórios Financeiros Periódicos</text>
+  <text x="30" y="750" fill="#0D47A1" font-size="9">▸ 2.5.4  Integração com Contabilidade e Sistemas de Gestão</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PROGRAMA 3.0 — MODELAGEM DE GOVERNANÇA   col x=495  w=460
+       ══════════════════════════════════════════════════════════ -->
+  <rect x="495" y="157" width="460" height="60" rx="4" fill="#1B5E20"/>
+  <text x="725" y="177" text-anchor="middle" fill="#C8E6C9" font-size="9" font-weight="bold" letter-spacing="1">PROGRAMA 3.0</text>
+  <text x="725" y="197" text-anchor="middle" fill="white" font-size="13" font-weight="bold">Modelagem de Governança</text>
+  <text x="725" y="212" text-anchor="middle" fill="#A5D6A7" font-size="9">Domínios: Governança · Partes Interessadas · Recursos</text>
+
+  <!-- 3.1 -->
+  <rect x="495" y="225" width="460" height="87" rx="3" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="0.5"/>
+  <rect x="495" y="225" width="460" height="25" rx="3" fill="#388E3C"/>
+  <text x="505" y="242" fill="white" font-size="10" font-weight="bold">3.1 · Arquitetura de Governança As Is / To Be</text>
+  <text x="505" y="262" fill="#1B5E20" font-size="9">▸ 3.1.1  Diagnóstico de Governança As Is</text>
+  <text x="505" y="280" fill="#1B5E20" font-size="9">▸ 3.1.2  Desenho de Arquitetura To Be</text>
+  <text x="505" y="298" fill="#1B5E20" font-size="9">▸ 3.1.3  Entregável: Mapa As Is + Blueprint To Be</text>
+
+  <!-- 3.2 -->
+  <rect x="495" y="320" width="460" height="87" rx="3" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="0.5"/>
+  <rect x="495" y="320" width="460" height="25" rx="3" fill="#388E3C"/>
+  <text x="505" y="337" fill="white" font-size="10" font-weight="bold">3.2 · Papéis, Responsabilidades e Canais Oficiais</text>
+  <text x="505" y="357" fill="#1B5E20" font-size="9">▸ 3.2.1  Matriz de Papéis (Franqueador × Franqueado)</text>
+  <text x="505" y="375" fill="#1B5E20" font-size="9">▸ 3.2.2  Canais de Comunicação e Decisão</text>
+  <text x="505" y="393" fill="#1B5E20" font-size="9">▸ 3.2.3  Entregável: Matriz RACI + Quadro de Canais e SLAs</text>
+
+  <!-- 3.3 -->
+  <rect x="495" y="415" width="460" height="87" rx="3" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="0.5"/>
+  <rect x="495" y="415" width="460" height="25" rx="3" fill="#388E3C"/>
+  <text x="505" y="432" fill="white" font-size="10" font-weight="bold">3.3 · Sistema de Suporte, SLA e Relacionamento</text>
+  <text x="505" y="452" fill="#1B5E20" font-size="9">▸ 3.3.1  Modelo de Suporte</text>
+  <text x="505" y="470" fill="#1B5E20" font-size="9">▸ 3.3.2  SLA e Catálogo de Serviços</text>
+  <text x="505" y="488" fill="#1B5E20" font-size="9">▸ 3.3.3  Entregável: Manual de Suporte + Catálogo e Matriz SLA</text>
+
+  <!-- 3.4 -->
+  <rect x="495" y="510" width="460" height="87" rx="3" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="0.5"/>
+  <rect x="495" y="510" width="460" height="25" rx="3" fill="#388E3C"/>
+  <text x="505" y="527" fill="white" font-size="10" font-weight="bold">3.4 · Auditoria, Conformidade e Monitoramento de Rede</text>
+  <text x="505" y="547" fill="#1B5E20" font-size="9">▸ 3.4.1  Modelo de Auditoria</text>
+  <text x="505" y="565" fill="#1B5E20" font-size="9">▸ 3.4.2  Plano de Monitoramento Contínuo</text>
+  <text x="505" y="583" fill="#1B5E20" font-size="9">▸ 3.4.3  Entregável: Manual de Auditoria + Plano de Monitoramento</text>
+
+  <!-- 3.5 -->
+  <rect x="495" y="605" width="460" height="87" rx="3" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="0.5"/>
+  <rect x="495" y="605" width="460" height="25" rx="3" fill="#388E3C"/>
+  <text x="505" y="622" fill="white" font-size="10" font-weight="bold">3.5 · Política de Expansão e Seleção de Franqueados</text>
+  <text x="505" y="642" fill="#1B5E20" font-size="9">▸ 3.5.1  Política de Expansão e Territorialidade</text>
+  <text x="505" y="660" fill="#1B5E20" font-size="9">▸ 3.5.2  Processo de Seleção de Franqueados</text>
+  <text x="505" y="678" fill="#1B5E20" font-size="9">▸ 3.5.3  Entregável: Política de Expansão + Processo de Seleção</text>
+
+  <!-- 3.6 -->
+  <rect x="495" y="700" width="460" height="105" rx="3" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="0.5"/>
+  <rect x="495" y="700" width="460" height="25" rx="3" fill="#388E3C"/>
+  <text x="505" y="717" fill="white" font-size="10" font-weight="bold">3.6 · Gestão de Conflitos, Reclamações e Contencioso</text>
+  <text x="505" y="737" fill="#1B5E20" font-size="9">▸ 3.6.1  Sistema de Registro e Tratamento de Conflitos</text>
+  <text x="505" y="755" fill="#1B5E20" font-size="9">▸ 3.6.2  Integração com Lições Aprendidas</text>
+  <text x="505" y="773" fill="#1B5E20" font-size="9">▸ 3.6.3  Encerramento de unidade e reversão de ativos</text>
+  <text x="505" y="791" fill="#1B5E20" font-size="9">▸ 3.6.4  Entregável: Política de Conflitos + Lições Aprendidas</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PROGRAMA 4.0 — MODELAGEM COMERCIAL   col x=970  w=460
+       ══════════════════════════════════════════════════════════ -->
+  <rect x="970" y="157" width="460" height="60" rx="4" fill="#BF360C"/>
+  <text x="1200" y="177" text-anchor="middle" fill="#FFCCBC" font-size="9" font-weight="bold" letter-spacing="1">PROGRAMA 4.0</text>
+  <text x="1200" y="197" text-anchor="middle" fill="white" font-size="13" font-weight="bold">Modelagem Comercial</text>
+  <text x="1200" y="212" text-anchor="middle" fill="#FFAB91" font-size="9">Domínios: Escopo · Partes Interessadas</text>
+
+  <!-- 4.1 -->
+  <rect x="970" y="225" width="460" height="87" rx="3" fill="#FBE9E7" stroke="#FFAB91" stroke-width="0.5"/>
+  <rect x="970" y="225" width="460" height="25" rx="3" fill="#E64A19"/>
+  <text x="980" y="242" fill="white" font-size="10" font-weight="bold">4.1 · Diagnóstico e Mapeamento Comercial As Is</text>
+  <text x="980" y="262" fill="#BF360C" font-size="9">▸ 4.1.1  Mapeamento de Presença Digital e Marca</text>
+  <text x="980" y="280" fill="#BF360C" font-size="9">▸ 4.1.2  Mapeamento de Comunicação com Franqueados</text>
+  <text x="980" y="298" fill="#BF360C" font-size="9">▸ 4.1.3  Entregável: Relatório de Arquitetura Comercial Atual</text>
+
+  <!-- 4.2 -->
+  <rect x="970" y="320" width="460" height="105" rx="3" fill="#FBE9E7" stroke="#FFAB91" stroke-width="0.5"/>
+  <rect x="970" y="320" width="460" height="25" rx="3" fill="#E64A19"/>
+  <text x="980" y="337" fill="white" font-size="10" font-weight="bold">4.2 · Manual da Marca</text>
+  <text x="980" y="357" fill="#BF360C" font-size="9">▸ 4.2.1  Definição de Identidade de Marca</text>
+  <text x="980" y="375" fill="#BF360C" font-size="9">▸ 4.2.2  Especificação de Aplicações da Marca</text>
+  <text x="980" y="393" fill="#BF360C" font-size="9">▸ 4.2.3  Manual de Uso e Proteção da Marca</text>
+  <text x="980" y="411" fill="#BF360C" font-size="9">▸ 4.2.4  Entregável: Manual da Marca formalizado e comunicado</text>
+
+  <!-- 4.3 -->
+  <rect x="970" y="433" width="460" height="87" rx="3" fill="#FBE9E7" stroke="#FFAB91" stroke-width="0.5"/>
+  <rect x="970" y="433" width="460" height="25" rx="3" fill="#E64A19"/>
+  <text x="980" y="450" fill="white" font-size="10" font-weight="bold">4.3 · Manual de Mídias Sociais</text>
+  <text x="980" y="470" fill="#BF360C" font-size="9">▸ 4.3.1  Estruturação de Diretrizes de Conteúdo</text>
+  <text x="980" y="488" fill="#BF360C" font-size="9">▸ 4.3.2  Políticas de Resposta e Gestão de Crises Digitais</text>
+  <text x="980" y="506" fill="#BF360C" font-size="9">▸ 4.3.3  Entregável: Manual de Mídias Sociais formalizado</text>
+
+  <!-- 4.4 -->
+  <rect x="970" y="528" width="460" height="87" rx="3" fill="#FBE9E7" stroke="#FFAB91" stroke-width="0.5"/>
+  <rect x="970" y="528" width="460" height="25" rx="3" fill="#E64A19"/>
+  <text x="980" y="545" fill="white" font-size="10" font-weight="bold">4.4 · Mentoria (Indiv.) — Gestão de Mídias Sociais</text>
+  <text x="980" y="565" fill="#BF360C" font-size="9">▸ 4.4.1  Diagnóstico de Presença Digital da Unidade</text>
+  <text x="980" y="583" fill="#BF360C" font-size="9">▸ 4.4.2  Plano de Conteúdo e Calendário Editorial</text>
+  <text x="980" y="601" fill="#BF360C" font-size="9">▸ 4.4.3  Rotina de Monitoramento de Métricas e Ajustes</text>
+
+  <!-- 4.5 -->
+  <rect x="970" y="623" width="460" height="105" rx="3" fill="#FBE9E7" stroke="#FFAB91" stroke-width="0.5"/>
+  <rect x="970" y="623" width="460" height="25" rx="3" fill="#E64A19"/>
+  <text x="980" y="640" fill="white" font-size="10" font-weight="bold">4.5 · Plano de Marketing de Lançamento</text>
+  <text x="980" y="660" fill="#BF360C" font-size="9">▸ 4.5.1  Campanha de Pré-Lançamento</text>
+  <text x="980" y="678" fill="#BF360C" font-size="9">▸ 4.5.2  Cronograma de Ações de Inauguração</text>
+  <text x="980" y="696" fill="#BF360C" font-size="9">▸ 4.5.3  Plano de Comunicação Local</text>
+  <text x="980" y="714" fill="#BF360C" font-size="9">▸ 4.5.4  Entregável: Plano de Marketing de Lançamento por unidade</text>
+
+  <!-- 4.6 -->
+  <rect x="970" y="736" width="460" height="87" rx="3" fill="#FBE9E7" stroke="#FFAB91" stroke-width="0.5"/>
+  <rect x="970" y="736" width="460" height="25" rx="3" fill="#E64A19"/>
+  <text x="980" y="753" fill="white" font-size="10" font-weight="bold">4.6 · Campanhas Cooperadas e Trade Marketing</text>
+  <text x="980" y="773" fill="#BF360C" font-size="9">▸ 4.6.1  Diretrizes de Campanhas Cooperadas</text>
+  <text x="980" y="791" fill="#BF360C" font-size="9">▸ 4.6.2  Padrões de PDV e Experiência do Cliente</text>
+  <text x="980" y="809" fill="#BF360C" font-size="9">▸ 4.6.3  Monitoramento de Aderência e Resultados</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PROGRAMA 5.0 — MODELAGEM OPERACIONAL   col x=1445  w=460
+       ══════════════════════════════════════════════════════════ -->
+  <rect x="1445" y="157" width="460" height="60" rx="4" fill="#4A148C"/>
+  <text x="1675" y="177" text-anchor="middle" fill="#E1BEE7" font-size="9" font-weight="bold" letter-spacing="1">PROGRAMA 5.0</text>
+  <text x="1675" y="197" text-anchor="middle" fill="white" font-size="13" font-weight="bold">Modelagem Operacional</text>
+  <text x="1675" y="212" text-anchor="middle" fill="#CE93D8" font-size="9">Domínios: Escopo · Cronograma · Recursos · Risco</text>
+
+  <!-- 5.1 -->
+  <rect x="1445" y="225" width="460" height="87" rx="3" fill="#F3E5F5" stroke="#CE93D8" stroke-width="0.5"/>
+  <rect x="1445" y="225" width="460" height="25" rx="3" fill="#7B1FA2"/>
+  <text x="1455" y="242" fill="white" font-size="10" font-weight="bold">5.1 · Cronograma de Implantação</text>
+  <text x="1455" y="262" fill="#4A148C" font-size="9">▸ 5.1.1  Planejamento macro de implantação</text>
+  <text x="1455" y="280" fill="#4A148C" font-size="9">▸ 5.1.2  Detalhamento de marcos, entregas e dependências</text>
+  <text x="1455" y="298" fill="#4A148C" font-size="9">▸ 5.1.3  Entregável: Cronograma mestre + checklists</text>
+
+  <!-- 5.2 -->
+  <rect x="1445" y="320" width="460" height="105" rx="3" fill="#F3E5F5" stroke="#CE93D8" stroke-width="0.5"/>
+  <rect x="1445" y="320" width="460" height="25" rx="3" fill="#7B1FA2"/>
+  <text x="1455" y="337" fill="white" font-size="10" font-weight="bold">5.2 · Mapeamento Operacional</text>
+  <text x="1455" y="357" fill="#4A148C" font-size="9">▸ 5.2.1  Levantamento de processos AS-IS (Loja e Quiosque)</text>
+  <text x="1455" y="375" fill="#4A148C" font-size="9">▸ 5.2.2  Modelagem de processos TO-BE (Loja e Quiosque)</text>
+  <text x="1455" y="393" fill="#4A148C" font-size="9">▸ 5.2.3  Pesquisa de Concorrência</text>
+  <text x="1455" y="411" fill="#4A148C" font-size="9">▸ 5.2.4  Prevenção de Perdas no Varejo</text>
+
+  <!-- 5.3 -->
+  <rect x="1445" y="433" width="460" height="267" rx="3" fill="#F3E5F5" stroke="#CE93D8" stroke-width="0.5"/>
+  <rect x="1445" y="433" width="460" height="25" rx="3" fill="#7B1FA2"/>
+  <text x="1455" y="450" fill="white" font-size="10" font-weight="bold">5.3 · Sistema Operacional da Franquia (13 Manuais)</text>
+  <text x="1455" y="470" fill="#4A148C" font-size="9">▸ 5.3.1   Manual de Gestão de Crises</text>
+  <text x="1455" y="488" fill="#4A148C" font-size="9">▸ 5.3.2   Manual de Gestão de Riscos</text>
+  <text x="1455" y="506" fill="#4A148C" font-size="9">▸ 5.3.3   Manual de Qualidade</text>
+  <text x="1455" y="524" fill="#4A148C" font-size="9">▸ 5.3.4   Manual de RH</text>
+  <text x="1455" y="542" fill="#4A148C" font-size="9">▸ 5.3.5   Manual de Compras</text>
+  <text x="1455" y="560" fill="#4A148C" font-size="9">▸ 5.3.6   Manual de Vendas</text>
+  <text x="1455" y="578" fill="#4A148C" font-size="9">▸ 5.3.7   Manual de Marketing (PDV)</text>
+  <text x="1455" y="596" fill="#4A148C" font-size="9">▸ 5.3.8   Manual Financeiro (Operação)</text>
+  <text x="1455" y="614" fill="#4A148C" font-size="9">▸ 5.3.9   Manual Contábil (Operação)</text>
+  <text x="1455" y="632" fill="#4A148C" font-size="9">▸ 5.3.10  Manual de Auditoria (Operação)</text>
+  <text x="1455" y="650" fill="#4A148C" font-size="9">▸ 5.3.11  Manual de Compliance</text>
+  <text x="1455" y="668" fill="#4A148C" font-size="9">▸ 5.3.12  Manual Pré-Operacional (Loja)</text>
+  <text x="1455" y="686" fill="#4A148C" font-size="9">▸ 5.3.13  Manual Pré-Operacional (Quiosque)</text>
+
+  <!-- 5.4 -->
+  <rect x="1445" y="708" width="460" height="87" rx="3" fill="#F3E5F5" stroke="#CE93D8" stroke-width="0.5"/>
+  <rect x="1445" y="708" width="460" height="25" rx="3" fill="#7B1FA2"/>
+  <text x="1455" y="725" fill="white" font-size="10" font-weight="bold">5.4 · Gestão de Fornecedores e Cadeia de Suprimentos</text>
+  <text x="1455" y="745" fill="#4A148C" font-size="9">▸ 5.4.1  Qualificação e homologação de fornecedores críticos</text>
+  <text x="1455" y="763" fill="#4A148C" font-size="9">▸ 5.4.2  Procedimentos de abastecimento e logística</text>
+  <text x="1455" y="781" fill="#4A148C" font-size="9">▸ 5.4.3  Entregável: Política de suprimentos + fornecedores</text>
+
+  <!-- 5.5 -->
+  <rect x="1445" y="803" width="460" height="87" rx="3" fill="#F3E5F5" stroke="#CE93D8" stroke-width="0.5"/>
+  <rect x="1445" y="803" width="460" height="25" rx="3" fill="#7B1FA2"/>
+  <text x="1455" y="820" fill="white" font-size="10" font-weight="bold">5.5 · Implantação do Sistema de Franquias</text>
+  <text x="1455" y="840" fill="#4A148C" font-size="9">▸ 5.5.1  Treinamento inicial do Franqueado — Loja</text>
+  <text x="1455" y="858" fill="#4A148C" font-size="9">▸ 5.5.2  Treinamento inicial do Franqueado — Quiosque</text>
+  <text x="1455" y="876" fill="#4A148C" font-size="9">▸ 5.5.3  Avaliação e reforço pós-treinamento</text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PROGRAMA 6.0 — MODELAGEM JURÍDICA   col x=1920  w=460
+       ══════════════════════════════════════════════════════════ -->
+  <rect x="1920" y="157" width="460" height="60" rx="4" fill="#B71C1C"/>
+  <text x="2150" y="177" text-anchor="middle" fill="#FFCDD2" font-size="9" font-weight="bold" letter-spacing="1">PROGRAMA 6.0</text>
+  <text x="2150" y="197" text-anchor="middle" fill="white" font-size="13" font-weight="bold">Modelagem Jurídica</text>
+  <text x="2150" y="212" text-anchor="middle" fill="#EF9A9A" font-size="9">Domínios: Governança · Escopo · Partes Int. · Risco</text>
+
+  <!-- 6.1 -->
+  <rect x="1920" y="225" width="460" height="123" rx="3" fill="#FFEBEE" stroke="#EF9A9A" stroke-width="0.5"/>
+  <rect x="1920" y="225" width="460" height="25" rx="3" fill="#C62828"/>
+  <text x="1930" y="242" fill="white" font-size="10" font-weight="bold">6.1 · Mentoria (Grupo) — Legislação e Jurisprudência</text>
+  <text x="1930" y="262" fill="#B71C1C" font-size="9">▸ 6.1.1  Resumo executivo sobre o negócio do Franqueador</text>
+  <text x="1930" y="280" fill="#B71C1C" font-size="9">▸ 6.1.2  RIC — Relatório de Informações Contratuais</text>
+  <text x="1930" y="298" fill="#B71C1C" font-size="9">▸ 6.1.3  RJJ — Relatório de Jurisprudência e Jurimetria</text>
+  <text x="1930" y="316" fill="#B71C1C" font-size="9">▸ 6.1.4  SLA — Acordo de Nível de Serviço</text>
+  <text x="1930" y="334" fill="#B71C1C" font-size="9">▸ 6.1.5  CC — Consolidação Contratual</text>
+
+  <!-- 6.2 -->
+  <rect x="1920" y="356" width="460" height="105" rx="3" fill="#FFEBEE" stroke="#EF9A9A" stroke-width="0.5"/>
+  <rect x="1920" y="356" width="460" height="25" rx="3" fill="#C62828"/>
+  <text x="1930" y="373" fill="white" font-size="10" font-weight="bold">6.2 · Mentoria (Indiv.) — Mídias Sociais (Jurídico)</text>
+  <text x="1930" y="393" fill="#B71C1C" font-size="9">▸ 6.2.1  Resumo executivo — foco em presença digital</text>
+  <text x="1930" y="411" fill="#B71C1C" font-size="9">▸ 6.2.2  RIC — Informações contratuais aplicadas a mídias</text>
+  <text x="1930" y="429" fill="#B71C1C" font-size="9">▸ 6.2.3  RJJ — Jurisprudência sobre uso de marca</text>
+  <text x="1930" y="447" fill="#B71C1C" font-size="9">▸ 6.2.4  SLA — Gestão de canais e conteúdo</text>
+
+  <!-- 6.3 -->
+  <rect x="1920" y="469" width="460" height="105" rx="3" fill="#FFEBEE" stroke="#EF9A9A" stroke-width="0.5"/>
+  <rect x="1920" y="469" width="460" height="25" rx="3" fill="#C62828"/>
+  <text x="1930" y="486" fill="white" font-size="10" font-weight="bold">6.3 · Consultoria (Indiv.) — Legislação e Jurisprudência</text>
+  <text x="1930" y="506" fill="#B71C1C" font-size="9">▸ 6.3.1  Resumo executivo jurídico do modelo de franquia</text>
+  <text x="1930" y="524" fill="#B71C1C" font-size="9">▸ 6.3.2  RIC — Informações Contratuais da rede</text>
+  <text x="1930" y="542" fill="#B71C1C" font-size="9">▸ 6.3.3  RJJ — Jurisprudência e Jurimetria (API CNJ)</text>
+  <text x="1930" y="560" fill="#B71C1C" font-size="9">▸ 6.3.4  SLA jurídico como artefato de entrada</text>
+
+  <!-- 6.4 -->
+  <rect x="1920" y="582" width="460" height="87" rx="3" fill="#FFEBEE" stroke="#EF9A9A" stroke-width="0.5"/>
+  <rect x="1920" y="582" width="460" height="25" rx="3" fill="#C62828"/>
+  <text x="1930" y="599" fill="white" font-size="10" font-weight="bold">6.4 · Cerimônia de Entrega — Compilado Contratual</text>
+  <text x="1930" y="619" fill="#B71C1C" font-size="9">▸ 6.4.1  Resumo executivo atualizado a partir do SLA</text>
+  <text x="1930" y="637" fill="#B71C1C" font-size="9">▸ 6.4.2  Atualização do RIC</text>
+  <text x="1930" y="655" fill="#B71C1C" font-size="9">▸ 6.4.3  CC — Consolidação Contratual final</text>
+
+  <!-- 6.5 -->
+  <rect x="1920" y="677" width="460" height="105" rx="3" fill="#FFEBEE" stroke="#EF9A9A" stroke-width="0.5"/>
+  <rect x="1920" y="677" width="460" height="25" rx="3" fill="#C62828"/>
+  <text x="1930" y="694" fill="white" font-size="10" font-weight="bold">6.5 · Canal Jurídico Seguro</text>
+  <text x="1930" y="714" fill="#B71C1C" font-size="9">▸ 6.5.1  Avaliação de riscos jurídicos e contratuais</text>
+  <text x="1930" y="732" fill="#B71C1C" font-size="9">▸ 6.5.2  Gestão de base de posições jurídicas</text>
+  <text x="1930" y="750" fill="#B71C1C" font-size="9">▸ 6.5.3  Atendimento de consultas recorrentes (SLA)</text>
+  <text x="1930" y="768" fill="#B71C1C" font-size="9">▸ 6.5.4  Monitoramento legislativo e jurisprudencial</text>
+
+  <!-- 6.6 -->
+  <rect x="1920" y="790" width="460" height="69" rx="3" fill="#FFEBEE" stroke="#EF9A9A" stroke-width="0.5"/>
+  <rect x="1920" y="790" width="460" height="25" rx="3" fill="#C62828"/>
+  <text x="1930" y="807" fill="white" font-size="10" font-weight="bold">6.6 · Gestão de Reclamações e Contencioso</text>
+  <text x="1930" y="827" fill="#B71C1C" font-size="9">▸ 6.6.1  Registro e tratamento estruturado de reclamações</text>
+  <text x="1930" y="845" fill="#B71C1C" font-size="9">▸ 6.6.2  Lições aprendidas jurídicas</text>
+
+  <!-- ══ FOOTER ══ -->
+  <rect x="0" y="910" width="2400" height="40" fill="#12152E"/>
+
+  <!-- Legend squares -->
+  <rect x="30"  y="922" width="11" height="11" rx="2" fill="#1565C0"/>
+  <text x="46"  y="932" fill="#BBDEFB" font-size="9" font-weight="bold">FINANCEIRA</text>
+  <rect x="150" y="922" width="11" height="11" rx="2" fill="#1B5E20"/>
+  <text x="166" y="932" fill="#C8E6C9" font-size="9" font-weight="bold">GOVERNANÇA</text>
+  <rect x="285" y="922" width="11" height="11" rx="2" fill="#BF360C"/>
+  <text x="301" y="932" fill="#FFCCBC" font-size="9" font-weight="bold">COMERCIAL</text>
+  <rect x="400" y="922" width="11" height="11" rx="2" fill="#4A148C"/>
+  <text x="416" y="932" fill="#E1BEE7" font-size="9" font-weight="bold">OPERACIONAL</text>
+  <rect x="530" y="922" width="11" height="11" rx="2" fill="#B71C1C"/>
+  <text x="546" y="932" fill="#FFCDD2" font-size="9" font-weight="bold">JURÍDICA</text>
+
+  <text x="1200" y="932" text-anchor="middle" fill="#546E7A" font-size="9">
+    5 Programas · 26 Projetos · Portfólio: Franquia · Almeida Associados · OAB/RJ 215.105
+  </text>
+  <text x="2370" y="932" text-anchor="end" fill="#546E7A" font-size="9">Abril / 2026</text>
+
+</svg>
